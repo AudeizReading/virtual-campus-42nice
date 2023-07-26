@@ -1,7 +1,7 @@
 
 .PHONY: install uninstall
 install:
-	if [ -n ${REPO} ]; then \
+	@if [ -n ${REPO} ]; then \
 		cd ./install && \
 		git clone ${REPO} && \
 		docker build -t virtual-campus-42nice ./ && \
@@ -9,7 +9,7 @@ install:
 	fi
 
 uninstall:
-	cd ./install && \
+	@cd ./install && \
 	docker container rm virtual-campus-42nice && \
 	docker image rm virtual-campus-42nice && \
-	find  ./ ! -name "Dockerfile" -exec rm -rf {} \;
+	find  ./ ! -name "Dockerfile" -maxdepth 1 -exec rm -rf {} \;

@@ -12,6 +12,7 @@ RUN apt -y upgrade \
 	g++ \
 	make \
 	gdb \
+	valgrind \
 	vim \
 	software-properties-common \
 	&& apt update -y \
