@@ -14,6 +14,11 @@ RUN apt -y upgrade \
 	gdb \
 	valgrind \
 	vim \
+	readline-common \
+	libreadline8 \
+	libreadline-dev \
+	firefox \
+	x11-xserver-utils \
 	software-properties-common \
 	&& apt update -y \
 	&& add-apt-repository ppa:deadsnakes/ppa -y \
