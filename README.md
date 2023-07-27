@@ -44,7 +44,7 @@ to be similar but I can not confirm this.
 ](https://www.pcworld.com/article/420529/windows-10s-bash-shell-can-run-graphical-linux-applications-with-this-trick.html)  
 
 If you encounter a trouble with the **DISPLAY** environment variable, you
-should update it (inside the **configure.sh file** where `docker run` is) to your workstation's **$DISPLAY** value or set it to the value **:0**. Feedback me if it happens.
+should update it (inside the **Makefile** where rule is `launch`) to your workstation's **$DISPLAY** value or set it to the value **:0**. Feedback me if it happens.
 
 ## New Features
 - The intallations are simplified and decoupled: one defense environment and one
@@ -64,7 +64,7 @@ should update it (inside the **configure.sh file** where `docker run` is) to you
 ### Creating a defense container
 
 As some mates are concerning about cheating, I've made a container that git
-clone the url past in the REPO parameter, copy the work directly into the
+clone the url asked by prompt, copy the work directly into the
 containers and directly delete it at the exit of the container. It is still
 possible to cheat (if you know how to do...), but it would be a kind harder than
 if you can access directly to your mate's work.
