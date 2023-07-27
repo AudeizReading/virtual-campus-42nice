@@ -1,4 +1,4 @@
-.PHONY: install defense run destroy uninstall
+.PHONY: install defense launch run destroy uninstall
 
 install:
 	@./configure.sh dev
