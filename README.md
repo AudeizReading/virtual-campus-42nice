@@ -146,6 +146,6 @@ I guess (and hope), then with this v3, almost all common core projects are
 accessible.
 
 It is also done quicly, so if you see that I have missed something important,
-feel free to contact me by PR, Slack Discord, etc.
+feel free to contact me by making GH issues, PR, Slack Discord, etc.
 
 Maybe for the v4, I will look at the VSCode side...
