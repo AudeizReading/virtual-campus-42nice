@@ -98,7 +98,7 @@ folder.
 ## Inside the container
 
 At the start, you should be placed into the directory named */tmp/corrections* if you have chosen the defense way. Inside it, you should find your mate's repository. Go overthere for beginning the evaluation. Use the Ubuntu commands as `cd` etc.  
-Otherwise, you will start at */tmp/dev* or at */usr/src* (the mlx is inside).
+Otherwise, you will start at */tmp/dev* or at */usr/src*.
 
 Norminette is also installed. `norminette <files> ...` should work.
 
@@ -106,6 +106,28 @@ Also, you should have access to some tools as `gcc` or `g++` or `make`. Feel
 free to give any feedback for adding the tools that I might have forgotten.
 
 Mlx is also available. As Firefox is.
+
+### Test MLX
+
+We are still inside the container. Enter this for running the mlx tests provided
+by 42network
+
+```
+cd /usr/src/mlx/test 
+./run_tests.sh
+```
+
+A demo should be run after this.
+
+### Test Firefox
+
+Still into container:
+
+```
+firefox
+```
+
+A Firefox GUI should run.
 
 ## Exit of the container
 
@@ -149,3 +171,13 @@ It is also done quicly, so if you see that I have missed something important,
 feel free to contact me by making GH issues, PR, Slack Discord, etc.
 
 Maybe for the v4, I will look at the VSCode side...
+
+### Errata
+
+*This night, I've made some test about permission files. You might have gotten
+stuck, if you launch the container. I've repaired my mistake, so do not clone
+again the repo, just update it with:*
+
+```
+git pull origin master
+```
