@@ -49,15 +49,22 @@ should update it (inside the **Makefile** where rule is `launch`) to your workst
 ## New Features
 - The intallations are simplified and decoupled: one defense environment and one
   dev environment.
-- The container is built more faster (but is a little more bigger, about 2GB).
+- The container is built more faster (but is a little more bigger, about 1.7GB).
   This is done because most of the tools are pre-built on another Docker image
-  that I've made and call (you can no longer remove tools from this one).
+  that I've made and call (you can no longer remove tools from this one but you
+  can have an overview overthere [pre-built Ubuntu image](https://hub.docker.com/repository/docker/audeizreading/virtual-campus-42nice/general)).
   - tools included: `gcc g++ make man gdb valgrind vim emacs readline...`
-- Firefox is included (at first, I've used it for testing GUI, but I decide to
-  let it in, it may be useful, feel free to tell me if not)
+- You have the choice to install or not Firefox, you will be prompted for. The
+  consequence is that the image is a bit smaller (1.44GB)
 - Minilibx is installed and worked. I've tried to install it compliantly on how
   it is described by 42Paris, but maybe I've failed somewhere, so tell me too if it happens. Hope you can play with some So-long, fdf, fractol, Cub3D or MiniRT...
 - Readline is intalled. In theory, you can host and run a Minishell...
+
+Update from your side, on your workstation, this repo regularly *- until this is not the final stable version, features would be adjusted frequently as this README*.
+
+```
+git pull origin main
+```
 
 ## Installation
 
@@ -121,7 +128,8 @@ A demo should be run after this.
 
 ### Test Firefox
 
-Still into container:
+Still into container, if you have enter "y" when it is asked to you, you have
+access to Firefox with GUI. Enter:
 
 ```
 firefox
