@@ -13,11 +13,20 @@ DOCKERFILE=Dockerfile
 cat > ${DOCKERFILE} << EOF
 FROM audeizreading/virtual-campus-42nice:latest
 
+EOF
+
+read -n 1 -p "Do you need Firefox ? [y/n]: " answer
+printf "\n"
+
+if [ "${answer}" = "y" ]
+then
+cat >> ${DOCKERFILE} << EOF
 RUN apt -y upgrade \\ 
 	&& apt update -y \\
-	&& apt install -y 
+	&& apt install -y firefox 
 
 EOF
+fi
 
 if [ "${1}" = "defense" ]
 then
