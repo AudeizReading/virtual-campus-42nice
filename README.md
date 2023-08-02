@@ -88,6 +88,7 @@ should update it (inside the **Makefile** where rule is `launch`) to your workst
 - Being able to emulate Android mobile projects (do not even think about
   emulating iOS projects on this container, unless someone has the solution for...)
 - Being able tu run outCC projects.
+- Isolate services into their own container.
 
 Update from your side, on your workstation, this repo regularly *- until this is not the final stable version, features would be adjusted frequently as this README*.
 
@@ -165,6 +166,16 @@ firefox
 ```
 
 A Firefox GUI should run.
+
+Do not worry if you get the following message inside the container:
+```
+[GFX1-]: glxtest: libpci missing
+[GFX1-]: glxtest: libEGL missing
+[GFX1-]: glxtest: libGL.so.1 missing
+[GFX1-]: No GPUs detected via PCI
+```
+
+Wait for few seconds, you will be able to browse soon.
 
 ### Test Docker
 
