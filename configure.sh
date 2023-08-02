@@ -16,12 +16,13 @@ fi
 # Debut Dockerfile, on recup l'image ubuntu 20.04 que j'ai pre-built
 DOCKERFILE=Dockerfile
 cat > ${DOCKERFILE} << EOF
-FROM audeizreading/virtual-campus-42nice:latest
+FROM audeizreading/virtual-campus-42nice:latest as builder
 
 EOF
 
 # Demande si intall Firefox
-read -n 1 -p "Do you need Firefox ? [y/n]: " answer
+printf "Do you need \033[31mFirefox\033[0m ? [y/n]: "
+read -n 1 answer
 printf "\n"
 
 if [ "${answer}" = "y" ]
@@ -35,7 +36,8 @@ EOF
 fi
 
 # Demande si besoin d'utiliser Docker dans le container (inception?)
-read -n 1 -p "Do you need Docker ? [y/n]: " answer
+printf "Do you need \033[31mDocker\033[0m ? [y/n]: "
+read -n 1 answer
 printf "\n"
 #
 if [ "${answer}" = "y" ]
@@ -57,16 +59,49 @@ EOF
 fi
 
 # Demande si intall node
-#read -n 1 -p "Do you need Node.js ? [y/n]: " answer
-#printf "\n"
-#
-#if [ "${answer}" = "y" ]
-#then
-#cat >> ${DOCKERFILE} << EOF
-#FROM node:latest
-#  
-#EOF
-#fi
+printf "Do you need \033[31mNode.js\033[0m ? [y/n]: "
+read -n 1 answer
+printf "\n"
+
+if [ "${answer}" = "y" ]
+then
+cat >> ${DOCKERFILE} << EOF
+RUN curl -fsSL https://deb.nodesource.com/setup_19.x | bash - \\
+	&& curl -sL https://dl.yarnpkg.com/debian/pubkey.gpg | gpg --dearmor | tee /usr/share/keyrings/yarnkey.gpg >/dev/null \\
+	&& echo "deb [signed-by=/usr/share/keyrings/yarnkey.gpg] https://dl.yarnpkg.com/debian stable main" | tee /etc/apt/sources.list.d/yarn.list \\
+	&& apt-get update && apt-get install -y nodejs yarn 
+  
+EOF
+fi
+
+# Demande si intall android
+printf "Do you need \033[31mAndroid\033[0m ? [y/n]: "
+read -n 1 answer
+printf "\n"
+
+if [ "${answer}" = "y" ]
+then
+cat >> ${DOCKERFILE} << EOF
+ARG GRADLE_VERSION=7.5
+ARG ANDROID_API_LEVEL=34
+ARG ANDROID_BUILD_TOOLS_LEVEL=34.0.0
+ARG EMULATOR_NAME='test'
+
+RUN apt-get update -y \\
+	&& apt-get install -y openjdk-11-jdk git libglu1 libpulse-dev libasound2 libc6 libstdc++6 libx11-6 libx11-xcb1 libxcb1 libxcomposite1 libxcursor1 libxi6 libxtst6 libnss3 \\
+	&& wget https://services.gradle.org/distributions/gradle-\${GRADLE_VERSION}-bin.zip -P /tmp && unzip -d /opt/gradle /tmp/gradle-\${GRADLE_VERSION}-bin.zip \\
+	&& wget 'https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip' -P /tmp \\
+	&& mkdir -p /opt/android/cmdline-tools/ && unzip -d /opt/android/cmdline-tools/ /tmp/commandlinetools-linux-9477386_latest.zip \\
+	&& mv /opt/android/cmdline-tools/cmdline-tools/ /opt/android/cmdline-tools/latest/ \\
+	&& yes Y | /opt/android/cmdline-tools/latest/bin/sdkmanager --install "platform-tools" "platforms;android-\${ANDROID_API_LEVEL}" "build-tools;\${ANDROID_BUILD_TOOLS_LEVEL}" "emulator" \\
+	&& yes Y | /opt/android/cmdline-tools/latest/bin/sdkmanager --licenses 
+  
+ENV GRADLE_HOME=/opt/gradle/gradle-\${GRADLE_VERSION}
+ENV ANDROID_HOME=/opt/android
+ENV PATH "\$PATH:\$GRADLE_HOME/bin:/opt/gradlew:\$ANDROID_HOME/emulator:\$ANDROID_HOME/tools/bin:\$ANDROID_HOME/platform-tools"
+ENV LD_LIBRARY_PATH=\$ANDROID_HOME/emulator/lib64:\$ANDROID_HOME/emulator/lib64/qt/lib
+EOF
+fi
 
 # Si ./configure.sh defense -> On lance un container pr defense = git clone
 # du repo vogsphere depuis host + copie du projet dans le container +
@@ -88,11 +123,13 @@ elif [ "${1}" = "dev" ]
 	# Si ./configure.sh dev -> on cree un container pour un environnement de dev
 then
 	# Installation en tete 42
-	read -n 1 -p "Do you need 42 header ? [y/n] : " need_header
+	printf "Do you need \033[31m42 header\033[0m ? [y/n]: "
+	read -n 1 need_header
 	printf "\n"
 	if [ "${need_header}" = "y" ]
 	then
-		read -p "Enter your 42 login: " login42
+		printf "Enter your \033[31m42 login\033[0m: "
+		read -n 8 login42
 		if [ -z login42 ]
 		then
 			login42="${USER}"
@@ -114,7 +151,8 @@ EOF
 
 	# Configuration pour mettre le container en real-time 
 	# Si pas de path, pas de real-time
-	read -p "Enter the absolute path of the folder you need to access in real-time. Leave blank if you do not need the feature, but be aware that you won't be in real-time and won't be able to sync your files from the container to the host and vice-versa: " path_work
+	printf "Enter the path of the folder you need to access in real-time.\nLeave blank if you do not need the feature, but be aware that you won't be in real-time and won't be able to sync your files from the container to the host and vice-versa: "
+	read path_work
 	printf "\n"
 	eval path_work="${path_work}" # Sinon ca n'expand pas les ~ et $HOME
 	if [ -n "${path_work}" ] && [ -d "${path_work}" ] || [ -f "${path_work}" ]
@@ -141,9 +179,9 @@ EOF
 # Mise en place du container
 if [ "${1}" = "defense" ]
 then
-	make launch NAME=virtual-defense-42nice DEVPATH="${socket_docker}"
+	make launch NAME=virtual-defense-42nice DEVPATH="${gradle_opt} ${socket_docker}"
 	make destroy
 elif [ "${1}" = "dev" ]
 then
-	make launch NAME=virtual-campus-42nice DEVPATH="${DEVPATH_} ${socket_docker}"
+	make launch NAME=virtual-campus-42nice DEVPATH="${gradle_opt} ${DEVPATH_} ${socket_docker}"
 fi
