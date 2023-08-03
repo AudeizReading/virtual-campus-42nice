@@ -121,28 +121,40 @@ make install
 You just may want to know if your project passes 42's standards. Great news, it
 is now available.
 
-For the moment, it is possible to enter the **relative|absolute** path of the work you
-need to look at inside (it won't be a bad idea to set this repo on the same
-level of yours, like side by side, you can clone everywhere while you enter a
-valid path or noone).
-
-You have the choice to import or no the work that you want to see inside an
-Ubuntu environment. Let empty the prompt, when it asks you the path, if you do not want
-to import files. Be aware that `../folder` and `../folder/` won't have the same
-effect... the first one copies the folder, the second ones copies files into the
-folder.
+And you can even know if your work passes 42'standard in **real-time**. That means
+that, after connecting your work folder, you can type your code base from your
+workstation, and see the result into the container in real-time. You do not have
+to re-build this container each time you make a change. You can provide whatever
+regular path for binding to the container like `$HOME/my-work` or `~/my-work` or
+`/usr/home/login/my-work` or `../my-work`.
 
 ## Inside the container
 
 At the start, you should be placed into the directory named */tmp/corrections* if you have chosen the defense way. Inside it, you should find your mate's repository. Go overthere for beginning the evaluation. Use the Ubuntu commands as `cd` etc.  
 Otherwise, you will start at */tmp/dev* or */tmp/dev/your-project-name* or at */usr/src*.
 
-Norminette is also installed. `norminette <files> ...` should work.
-
 Also, you should have access to some tools as `gcc` or `g++` or `make`. Feel
 free to give any feedback for adding the tools that I might have forgotten.
 
-Mlx is also available. As Firefox could (optionnal installation).
+Installed 42's tools:
++ Minilibx (42Paris)
++ Norminette
+
+Optionnal tools: (choose **y** when you are prompted for)
++ Firefox
++ 42's vim header (`:Stdheader` in vim command mode)
++ Docker
++ Node.js
++ Android Emulator
+
+### Test Norminette
+
+You can test your compliance to Norminette by just running the program
+everywhere you are inside the container: 
+
+```
+norminette [<file>...]
+```
 
 ### Test MLX
 
@@ -209,6 +221,18 @@ make run
 make uninstall
 ```
 
+## VSCode
+
+There will not a v4 for VSCode, because it exists an extension that make you
+able to work in real-time into this container from your workstation. I am not a VSCode user but the
+installation does not seem very complicated, just follow the instructions, test
+and retry if it does not work.
+
+I let you take a look at the offical documentation :
++ [Containers overview](https://code.visualstudio.com/docs/containers/overview)
++ [Remote overview](https://code.visualstudio.com/docs/remote/remote-overview)
++ [Devcontainers](https://code.visualstudio.com/docs/devcontainers/containers)
+
 ## Conclusion
 
 If you are looking for the old version v1 without GUI support (the one-shot correction):
@@ -226,15 +250,3 @@ accessible.
 
 It is also done quickly, so if you see that I have missed something important,
 feel free to contact me by making GH issues, PR, Slack Discord, etc.
-
-### VSCode
-
-There will not a v4 for VSCode, because it exists an extension that make you
-able to work in real-time into this container from your workstation. I am not a VSCode user but the
-installation does not seem very complicated, just follow the instructions, test
-and retry if it does not work.
-
-I let you take a look at the offical documentation :
-+ [Containers overview](https://code.visualstudio.com/docs/containers/overview)
-+ [Remote overview](https://code.visualstudio.com/docs/remote/remote-overview)
-+ [Devcontainers](https://code.visualstudio.com/docs/devcontainers/containers)
