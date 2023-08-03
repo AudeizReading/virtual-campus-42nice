@@ -75,32 +75,32 @@ EOF
 fi
 
 # Demande si intall android
+# Attention image android != si arm sdkmanager --list pour obtenir la liste des
+# repositories
 printf "Do you need \033[31mAndroid\033[0m ? [y/n]: "
 read -n 1 answer
 printf "\n"
 
 if [ "${answer}" = "y" ]
 then
+	if [ `uname` = "Darwin" ]
+	then
+		kextstat | grep intel > /dev/null
+		ret_val=$?
+	fi
+	echo "return value: ${ret_val}"
+	if [ `uname` = "Darwin" ] && [ "${ret_val}" != "0" ]
+	then
+		printf "It is better that you install Android Studio by your own for the moment.\nAndroid Emulator needs KVM or a CPU that handles the virtualisation. As Docker uses HyperVisualisor at its top most-level, it can not reuse it.\n"
+	else
+#	then
 cat >> ${DOCKERFILE} << EOF
-ARG GRADLE_VERSION=7.5
-ARG ANDROID_API_LEVEL=34
-ARG ANDROID_BUILD_TOOLS_LEVEL=34.0.0
-ARG EMULATOR_NAME='test'
-
-RUN apt-get update -y \\
-	&& apt-get install -y openjdk-11-jdk git libglu1 libpulse-dev libasound2 libc6 libstdc++6 libx11-6 libx11-xcb1 libxcb1 libxcomposite1 libxcursor1 libxi6 libxtst6 libnss3 \\
-	&& wget https://services.gradle.org/distributions/gradle-\${GRADLE_VERSION}-bin.zip -P /tmp && unzip -d /opt/gradle /tmp/gradle-\${GRADLE_VERSION}-bin.zip \\
-	&& wget 'https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip' -P /tmp \\
-	&& mkdir -p /opt/android/cmdline-tools/ && unzip -d /opt/android/cmdline-tools/ /tmp/commandlinetools-linux-9477386_latest.zip \\
-	&& mv /opt/android/cmdline-tools/cmdline-tools/ /opt/android/cmdline-tools/latest/ \\
-	&& yes Y | /opt/android/cmdline-tools/latest/bin/sdkmanager --install "platform-tools" "platforms;android-\${ANDROID_API_LEVEL}" "build-tools;\${ANDROID_BUILD_TOOLS_LEVEL}" "emulator" \\
-	&& yes Y | /opt/android/cmdline-tools/latest/bin/sdkmanager --licenses 
-  
-ENV GRADLE_HOME=/opt/gradle/gradle-\${GRADLE_VERSION}
-ENV ANDROID_HOME=/opt/android
-ENV PATH "\$PATH:\$GRADLE_HOME/bin:/opt/gradlew:\$ANDROID_HOME/emulator:\$ANDROID_HOME/tools/bin:\$ANDROID_HOME/platform-tools"
-ENV LD_LIBRARY_PATH=\$ANDROID_HOME/emulator/lib64:\$ANDROID_HOME/emulator/lib64/qt/lib
+RUN dpkg --add-architecture i386 \\
+	&& apt-get update -y && apt-get install -y openjdk-11-jdk coreutils libglu1 libpulse-dev libasound2 libc6 libstdc++6 libx11-6 libx11-xcb1 libxcb1 libxcomposite1 libxcursor1 libxi6 libxtst6 libnss3\\
+	&& wget https://redirector.gvt1.com/edgedl/android/studio/ide-zips/2022.2.1.19/android-studio-2022.2.1.19-linux.tar.gz -P /tmp && echo "6c0b4f949237470a905fac69122ed2f13d880dcff7f4c38d537885a5f8bcbf70 */tmp/android-studio-2022.2.1.19-linux.tar.gz" | shasum -a 256 -c && mkdir -p /opt/android-studio  && cd /opt/android-studio && tar -xzvf /tmp/android-studio-2022.2.1.19-linux.tar.gz \\ 
+	&& apt-get install -y libz1 libncurses5 libbz2-1.0:i386 libstdc++6 libbz2-1.0 lib32stdc++6 lib32z1 && apt-get clean -y && apt-get purge -y
 EOF
+	fi
 fi
 
 # Si ./configure.sh defense -> On lance un container pr defense = git clone
@@ -137,7 +137,7 @@ then
 		printf "\n"
 		cat >> ${DOCKERFILE} << EOF
 ENV USER=${login42}
-ENV MAIL=${login42}@student-42nice.fr
+ENV MAIL=${login42}@student.42nice.fr
 
 WORKDIR /etc/vim/plugin
 
@@ -151,8 +151,8 @@ EOF
 
 	# Configuration pour mettre le container en real-time 
 	# Si pas de path, pas de real-time
-	printf "Enter the path of the folder you need to access in real-time.\nLeave blank if you do not need the feature, but be aware that you won't be in real-time and won't be able to sync your files from the container to the host and vice-versa: "
-	read path_work
+	printf "Enter the path of the folder you need to access in real-time.\nLeave blank if you do not need the feature.\nBe aware that you won't be in real-time and won't be able to sync your files from the container to the host and vice-versa, if you do not give it.\n"
+	read -p "Your path: " path_work
 	printf "\n"
 	eval path_work="${path_work}" # Sinon ca n'expand pas les ~ et $HOME
 	if [ -n "${path_work}" ] && [ -d "${path_work}" ] || [ -f "${path_work}" ]
