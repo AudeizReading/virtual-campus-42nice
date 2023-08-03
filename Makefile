@@ -16,9 +16,9 @@ run:
 destroy:
 	@docker container rm virtual-defense-42nice && \
 	docker image rm virtual-defense-42nice && \
-	rm -rf ./corrections
+	rm -rf ./corrections Dockerfile
 
 uninstall:
 	@docker container rm virtual-campus-42nice && \
 	docker image rm virtual-campus-42nice && \
-	rm -rf ./dev 
+	rm -rf ./dev Dockerfile
