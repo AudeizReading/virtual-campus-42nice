@@ -47,6 +47,8 @@ If you encounter a trouble with the **DISPLAY** environment variable, you
 should update it (inside the **Makefile** where rule is `launch`) to your workstation's **$DISPLAY** value or set it to the value **:0**. Feedback me if it happens.
 
 ## New Features
+
+- Node.js is now an optional component *(not tested yet)*.
 - You can now work in real-time on your project. Just provide the path and it
   would be bound to the container. If you do not provide it, a dev container will
   be built without the capability to update in real-time, on your host, your work. **Not available on the defense container.**
@@ -85,12 +87,11 @@ should update it (inside the **Makefile** where rule is `launch`) to your workst
 
 ## TO-DO Features
 - Being able to work on web projects (node.js, npm, yarn...)
-- Being able to emulate Android mobile projects (do not even think about
-  emulating iOS projects on this container, unless someone has the solution for...)
 - Being able tu run outCC projects.
 - Isolate services into their own container.
 
-Update from your side, on your workstation, this repo regularly *- until this is not the final stable version, features would be adjusted frequently as this README*.
+
+> Update from your side, on your workstation, this repo regularly *- until this is not the final stable version, features would be adjusted frequently as this README*.
 
 ```
 git pull origin main
@@ -145,7 +146,6 @@ Optionnal tools: (choose **y** when you are prompted for)
 + 42's vim header (`:Stdheader` in vim command mode)
 + Docker
 + Node.js
-+ Android Emulator
 
 ### Test Norminette
 
@@ -232,6 +232,19 @@ I let you take a look at the offical documentation :
 + [Containers overview](https://code.visualstudio.com/docs/containers/overview)
 + [Remote overview](https://code.visualstudio.com/docs/remote/remote-overview)
 + [Devcontainers](https://code.visualstudio.com/docs/devcontainers/containers)
+
+## Android Emulator 
+
+Some solutions exist but only if the host workstation can handle KVM and/or
+virtualization. As it is CPU related, if your workstation can not, it can not
+work. I have reached the Android Studio installation stage, but the emulator was
+not available for me, only the IDE, through X11 server.
+
+If you need such support, my advice is to install an emulator or an IDE as
+Android Studio, directly on your workstation. In theory, if the app launches and
+works from your workstation by the emulator, there is no doubt that it can be launched on every
+Android device, whatever OS platform it was coded on. You can also use your
+Android phone as launcher (but I would not recommend that).
 
 ## Conclusion
 

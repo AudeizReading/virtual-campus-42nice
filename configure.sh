@@ -74,35 +74,6 @@ RUN curl -fsSL https://deb.nodesource.com/setup_19.x | bash - \\
 EOF
 fi
 
-# Demande si intall android
-# Attention image android != si arm sdkmanager --list pour obtenir la liste des
-# repositories
-printf "Do you need \033[31mAndroid\033[0m ? [y/n]: "
-read -n 1 answer
-printf "\n"
-
-if [ "${answer}" = "y" ]
-then
-	if [ `uname` = "Darwin" ]
-	then
-		kextstat | grep intel > /dev/null
-		ret_val=$?
-	fi
-	echo "return value: ${ret_val}"
-	if [ `uname` = "Darwin" ] && [ "${ret_val}" != "0" ]
-	then
-		printf "It is better that you install Android Studio by your own for the moment.\nAndroid Emulator needs KVM or a CPU that handles the virtualisation. As Docker uses HyperVisualisor at its top most-level, it can not reuse it.\n"
-	else
-#	then
-cat >> ${DOCKERFILE} << EOF
-RUN dpkg --add-architecture i386 \\
-	&& apt-get update -y && apt-get install -y openjdk-11-jdk coreutils libglu1 libpulse-dev libasound2 libc6 libstdc++6 libx11-6 libx11-xcb1 libxcb1 libxcomposite1 libxcursor1 libxi6 libxtst6 libnss3\\
-	&& wget https://redirector.gvt1.com/edgedl/android/studio/ide-zips/2022.2.1.19/android-studio-2022.2.1.19-linux.tar.gz -P /tmp && echo "6c0b4f949237470a905fac69122ed2f13d880dcff7f4c38d537885a5f8bcbf70 */tmp/android-studio-2022.2.1.19-linux.tar.gz" | shasum -a 256 -c && mkdir -p /opt/android-studio  && cd /opt/android-studio && tar -xzvf /tmp/android-studio-2022.2.1.19-linux.tar.gz \\ 
-	&& apt-get install -y libz1 libncurses5 libbz2-1.0:i386 libstdc++6 libbz2-1.0 lib32stdc++6 lib32z1 && apt-get clean -y && apt-get purge -y
-EOF
-	fi
-fi
-
 # Si ./configure.sh defense -> On lance un container pr defense = git clone
 # du repo vogsphere depuis host + copie du projet dans le container +
 # positionnement dans le repertoire de correction au demarrage du container
