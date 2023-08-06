@@ -1,4 +1,11 @@
-# virtual-campus-42nice V3
+# virtual-campus-42nice V5
+
+## Last Updates
+
+If you have downloaded the virtual-campus before these dates following, please
+update it with `git pull origin main`. It might not work with the version you've
+owned.
+- 06th August 2023.
 
 ## Prerequesites
 
@@ -48,16 +55,19 @@ should update it (inside the **Makefile** where rule is `launch`) to your workst
 
 ## New Features
 
-- Node.js is now an optional component *(not tested yet)*.
+- Node.js is now an optional component and works.
 - You can now work in real-time on your project. Just provide the path and it
-  would be bound to the container. If you do not provide it, a dev container will
+  would be bound to the container. You can provide any form of path: absolute, relative, with tilde or environment variables, until it is a valid path. If you do not provide it, a dev container will
   be built without the capability to update in real-time, on your host, your work. **Not available on the defense container.**
 - The 42's header vim plugin is now installed and works well. You have just to
-  enter your 42's login (otherwise it will use marvin as login). By
-  default the address mail related is by default ended with `[at]student-42nice[dot]fr`
+  enter your 42's login (otherwise it will use marvin or the username you are logged on as login). By
+  default the address mail related is by default ended with `[at]student[dot]42nice[dot]fr`
 - You can now start a container into a container (in theory choose firefox opt +
   docker opt for being able to run an inception container). For an overview of
   the process in action, I recommend this blog post that helped me a lot [Docker in Docker](https://blog.hiebl.cc/posts/gitlab-runner-docker-in-docker/).
+- The source docker image was upgraded with adding some developers tools
+  (`netcat`, `build-essentials`...). The new version includes a shell script
+  with options to install on built stage, this in order to get the smallest docker layer possible, even all options installed generate a Docker image of about 2.5GB (100s for building). Minimal size is 1.57GB.
 
 ## Previous Features
 

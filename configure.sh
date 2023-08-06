@@ -1,5 +1,22 @@
 #/bin/bash
 
+# $1 : software name
+# $2 : filename where to send
+# $3 : what to install
+function install_optional_software 
+{
+	printf "Install   \033[33m%10s\033[0m?\t%20s: " ${1} "[y/n]"
+	read -n 1 answer
+	printf "\n"
+	#
+	if [ "${answer}" = "y" ]
+	then
+		cat >> ${2} << EOF
+${3}
+EOF
+	fi
+}
+
 # Si ./configure.sh run (on relance le container duquel on a exit)
 if [ "${1}" = "run" ]
 then
@@ -15,64 +32,39 @@ fi
 
 # Debut Dockerfile, on recup l'image ubuntu 20.04 que j'ai pre-built
 DOCKERFILE=Dockerfile
+OPTSFILE=install-opts.sh
+OPTSINSTALL=""
+CONTAINER_NAME=virtual-campus-42nice
+
+echo > "${OPTSFILE}"
 cat > ${DOCKERFILE} << EOF
-FROM audeizreading/virtual-campus-42nice:latest as builder
+FROM audeizreading/virtual-campus-42nice:latest
 
 EOF
 
-# Demande si intall Firefox
-printf "Do you need \033[31mFirefox\033[0m ? [y/n]: "
-read -n 1 answer
-printf "\n"
+install_optional_software "Firefox" "${OPTSFILE}" "apt -y upgrade && apt update -y && apt install -y firefox"
 
-if [ "${answer}" = "y" ]
-then
-cat >> ${DOCKERFILE} << EOF
-RUN apt -y upgrade \\ 
-	&& apt update -y \\
-	&& apt install -y firefox 
-
-EOF
-fi
-
-# Demande si besoin d'utiliser Docker dans le container (inception?)
-printf "Do you need \033[31mDocker\033[0m ? [y/n]: "
-read -n 1 answer
-printf "\n"
-#
-if [ "${answer}" = "y" ]
-then
-	socket_docker="-v /var/run/docker.sock:/var/run/docker.sock "
-cat >> ${DOCKERFILE} << EOF
-RUN apt-get install -y ca-certificates gnupg \\
+answer="n"
+install_optional_software "Docker" "${OPTSFILE}" "apt-get install -y ca-certificates gnupg \\
 	&& install -m 0755 -d /etc/apt/keyrings \\
 	&& curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg \\
 	&& chmod a+r /etc/apt/keyrings/docker.gpg \\
-	&& echo "deb [arch="\$(dpkg --print-architecture)" signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu "\$(. /etc/os-release && echo "\$VERSION_CODENAME")" stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null \\
+	&& echo \"deb [arch=\"\$(dpkg --print-architecture)\" signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \"\$(. /etc/os-release && echo \"\$VERSION_CODENAME\")\" stable\" | tee /etc/apt/sources.list.d/docker.list > /dev/null \\
 	&& apt-get update -y\\
 	&& apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin\\
 	&& groupadd -f docker \\
 	&& usermod -aG docker root \\
 	&& newgrp docker \\
-	&& apt-get remove -y --auto-remove ca-certificates gnupg
-EOF
-fi
-
-# Demande si intall node
-printf "Do you need \033[31mNode.js\033[0m ? [y/n]: "
-read -n 1 answer
-printf "\n"
-
+	&& apt-get remove -y --auto-remove ca-certificates gnupg;"
 if [ "${answer}" = "y" ]
 then
-cat >> ${DOCKERFILE} << EOF
-RUN curl -fsSL https://deb.nodesource.com/setup_19.x | bash - \\
-	&& curl -sL https://dl.yarnpkg.com/debian/pubkey.gpg | gpg --dearmor | tee /usr/share/keyrings/yarnkey.gpg >/dev/null \\
-	&& echo "deb [signed-by=/usr/share/keyrings/yarnkey.gpg] https://dl.yarnpkg.com/debian stable main" | tee /etc/apt/sources.list.d/yarn.list \\
-	&& apt-get update && apt-get install -y nodejs yarn 
-  
-EOF
+	OPTSINSTALL="-v /var/run/docker.sock:/var/run/docker.sock "${OPTSINSTALL}
 fi
+
+install_optional_software "Node.js" "${OPTSFILE}" "curl -fsSL https://deb.nodesource.com/setup_19.x | bash - \\
+	&& curl -sL https://dl.yarnpkg.com/debian/pubkey.gpg | gpg --dearmor | tee /usr/share/keyrings/yarnkey.gpg >/dev/null \\
+	&& echo \"deb [signed-by=/usr/share/keyrings/yarnkey.gpg] https://dl.yarnpkg.com/debian stable main\" | tee /etc/apt/sources.list.d/yarn.list \\
+	&& apt-get update && apt-get install -y nodejs yarn;"
 
 # Si ./configure.sh defense -> On lance un container pr defense = git clone
 # du repo vogsphere depuis host + copie du projet dans le container +
@@ -90,18 +82,19 @@ WORKDIR /tmp/corrections
 COPY ./corrections .
 
 EOF
+	CONTAINER_NAME=virtual-defense-42nice
 elif [ "${1}" = "dev" ]
 	# Si ./configure.sh dev -> on cree un container pour un environnement de dev
 then
-	# Installation en tete 42
-	printf "Do you need \033[31m42 header\033[0m ? [y/n]: "
+	# Configuration en tete 42
+	printf "Configure \033[33m%10s\033[0m?\t%20s: " "42 header" "[y/n]"
 	read -n 1 need_header
 	printf "\n"
 	if [ "${need_header}" = "y" ]
 	then
-		printf "Enter your \033[31m42 login\033[0m: "
+		printf "Enter your \033[33m%10s\033[0m\t%20s: " "42 login" "(8 max)"
 		read -n 8 login42
-		if [ -z login42 ]
+		if [ -z ${login42} ] || [ ${login42} = "\n" ]
 		then
 			login42="${USER}"
 		fi
@@ -110,23 +103,16 @@ then
 ENV USER=${login42}
 ENV MAIL=${login42}@student.42nice.fr
 
-WORKDIR /etc/vim/plugin
-
-RUN git clone https://github.com/42Paris/42header.git header \\
-	&& cp header/plugin/stdheader.vim ./stdheader.vim \\
-	&& rm -rf header \\
-	&& apt remove -y git \\
-	&& apt autoremove -y
 EOF
 	fi
 
 	# Configuration pour mettre le container en real-time 
 	# Si pas de path, pas de real-time
-	printf "Enter the path of the folder you need to access in real-time.\nLeave blank if you do not need the feature.\nBe aware that you won't be in real-time and won't be able to sync your files from the container to the host and vice-versa, if you do not give it.\n"
+	printf "Enter the path of the folder you need to access in real-time.\n"
 	read -p "Your path: " path_work
 	printf "\n"
 	eval path_work="${path_work}" # Sinon ca n'expand pas les ~ et $HOME
-	if [ -n "${path_work}" ] && [ -d "${path_work}" ] || [ -f "${path_work}" ]
+	if [ -n "${path_work}" ] && [ -d "${path_work}" ]
 	then
 		## si path relatif, on convertit en path absolu
 		if [ "${path_work:0:3}" = "../" ] || [ "${path_work:0:2}" = "./" ]
@@ -136,10 +122,12 @@ EOF
 		# recup dernier troncon du path et preparation des differents paths dont
 		# on va se servir pour faire du temps-reel
 		FOLDER=`basename "${path_work}"`
-		DEVPATH_="-v ${path_work}:/tmp/dev/${FOLDER}"
+		OPTSINSTALL="-v ${path_work}:/tmp/dev/${FOLDER} "${OPTSINSTALL}
 		cat >> ${DOCKERFILE} << EOF
 WORKDIR /tmp/dev/${FOLDER}
 EOF
+	else
+		printf "\t\033[47;31mInvalid path\033[0m\n"
 	fi
 fi
 
@@ -148,11 +136,8 @@ ENTRYPOINT [ "/bin/bash" ]
 EOF
 
 # Mise en place du container
+make launch NAME="${CONTAINER_NAME}" OPTSINSTALL="${OPTSINSTALL}"
 if [ "${1}" = "defense" ]
 then
-	make launch NAME=virtual-defense-42nice DEVPATH="${gradle_opt} ${socket_docker}"
 	make destroy
-elif [ "${1}" = "dev" ]
-then
-	make launch NAME=virtual-campus-42nice DEVPATH="${gradle_opt} ${DEVPATH_} ${socket_docker}"
 fi
