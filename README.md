@@ -273,3 +273,15 @@ accessible.
 
 It is also done quickly, so if you see that I have missed something important,
 feel free to contact me by making GH issues, PR, Slack Discord, etc.
+
+### VSCode
+
+There will not a v4 for VSCode, because it exists an extension that make you
+able to work in real-time into this container from your workstation. I am not a VSCode user but the
+installation does not seem very complicated, just follow the instructions, test
+and retry if it does not work.
+
+I let you take a look at the offical documentation :
++ [Containers overview](https://code.visualstudio.com/docs/containers/overview)
++ [Remote overview](https://code.visualstudio.com/docs/remote/remote-overview)
++ [Devcontainers](https://code.visualstudio.com/docs/devcontainers/containers)

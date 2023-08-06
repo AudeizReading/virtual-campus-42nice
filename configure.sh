@@ -108,6 +108,7 @@ EOF
 
 	# Configuration pour mettre le container en real-time 
 	# Si pas de path, pas de real-time
+
 	printf "Enter the path of the folder you need to access in real-time.\n"
 	read -p "Your path: " path_work
 	printf "\n"
