@@ -1,10 +1,11 @@
-# virtual-campus-42nice V5
+# virtual-campus-42nice V6
 
 ## Last Updates
 
 If you have downloaded the virtual-campus before these dates following, please
 update it with `git pull origin main`. It might not work with the version you've
 owned.
+- 18th August 2023
 - 06th August 2023.
 
 ## Prerequesites
@@ -55,6 +56,35 @@ should update it (inside the **Makefile** where rule is `launch`) to your workst
 
 ## New Features
 
+- `clang-12` has been added! It is aliased on `gcc`, as `clang++-12` is aliased
+  on `c++`. If you need to use the regular command, use `\gcc` or `\c++`.
+- `matplotlib` for python has been installed.
+- a small configuration has been done for using Vim, as line number, or mouse
+  using.
+- `siege` has been installed, I have no clue if it works fine, as I couldn't test
+  it.
+- `nmap` has been installed.
+
+The base image is about **2.25GB**. Be aware of this, when you add optional
+features with it.
+
+### readline
+
+GNU readline is installed and works well if you follow these few steps:
+
+1. Always include `<stdio.h>` header before `<readline/readline.h>` and
+   `<readline/history.h>`.
+2. Always include your lib informations after your source files as following:
+   `gcc -Wall -Werror -Wextra source_files -lreadline -L /usr/lib/x86_64-linux-gnu/ -I /usr/include/readline
+   -o your_output_file`  
+   Your source files (`main.c` or `main.o`) must ALWAYS, in a Linux environment,
+   be before your librairies linkage. The executable or the objects files
+   generated through `-o` has ALWAYS to be at the end of your instruction.  
+   Be kind to also apply `-W` options at the assembly step, when you generate
+   object files with `gcc -c`.
+
+## Previous Features
+
 - Node.js is now an optional component and works.
 - You can now work in real-time on your project. Just provide the path and it
   would be bound to the container. You can provide any form of path: absolute, relative, with tilde or environment variables, until it is a valid path. If you do not provide it, a dev container will
@@ -68,9 +98,6 @@ should update it (inside the **Makefile** where rule is `launch`) to your workst
 - The source docker image was upgraded with adding some developers tools
   (`netcat`, `build-essentials`...). The new version includes a shell script
   with options to install on built stage, this in order to get the smallest docker layer possible, even all options installed generate a Docker image of about 2.5GB (100s for building). Minimal size is 1.57GB.
-
-## Previous Features
-
 - The intallations are simplified and decoupled: one defense environment and one
   dev environment.
 - The container is built more faster (but is a little more bigger, about 1.7GB).
@@ -96,7 +123,6 @@ should update it (inside the **Makefile** where rule is `launch`) to your workst
 - Readline is intalled. In theory, you can host and run a Minishell...
 
 ## TO-DO Features
-- Being able to work on web projects (node.js, npm, yarn...)
 - Being able tu run outCC projects.
 - Isolate services into their own container.
 
