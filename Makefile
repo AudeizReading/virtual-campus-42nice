@@ -14,9 +14,9 @@ run:
 	@./configure.sh run
 
 destroy:
-	@docker container rm virtual-defense-42nice && \
-		docker image rm virtual-defense-42nice:on-built && \
-	rm -rf ./corrections Dockerfile install-opts.sh
+	@(docker container rm virtual-defense-42nice && \
+		docker image rm virtual-defense-42nice:on-built) || true
+	@rm -rf ./corrections Dockerfile install-opts.sh || true
 
 uninstall:
 	@docker container rm virtual-campus-42nice && \
