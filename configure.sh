@@ -42,7 +42,7 @@ FROM audeizreading/virtual-campus-42nice:latest
 
 EOF
 
-install_optional_software "Firefox" "${OPTSFILE}" "apt -y upgrade && apt update -y && apt install -y firefox"
+install_optional_software "Firefox" "${OPTSFILE}" "apt -y update && apt upgrade -y && apt install -y firefox"
 
 answer="n"
 install_optional_software "Docker" "${OPTSFILE}" "apt-get install -y ca-certificates gnupg \\
@@ -50,7 +50,7 @@ install_optional_software "Docker" "${OPTSFILE}" "apt-get install -y ca-certific
 	&& curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg \\
 	&& chmod a+r /etc/apt/keyrings/docker.gpg \\
 	&& echo \"deb [arch=\"\$(dpkg --print-architecture)\" signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \"\$(. /etc/os-release && echo \"\$VERSION_CODENAME\")\" stable\" | tee /etc/apt/sources.list.d/docker.list > /dev/null \\
-	&& apt-get update -y\\
+	&& apt-get update -y && apt upgrade -y \\
 	&& apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin\\
 	&& groupadd -f docker \\
 	&& usermod -aG docker root \\
@@ -64,7 +64,7 @@ fi
 install_optional_software "Node.js" "${OPTSFILE}" "curl -fsSL https://deb.nodesource.com/setup_19.x | bash - \\
 	&& curl -sL https://dl.yarnpkg.com/debian/pubkey.gpg | gpg --dearmor | tee /usr/share/keyrings/yarnkey.gpg >/dev/null \\
 	&& echo \"deb [signed-by=/usr/share/keyrings/yarnkey.gpg] https://dl.yarnpkg.com/debian stable main\" | tee /etc/apt/sources.list.d/yarn.list \\
-	&& apt-get update && apt-get install -y nodejs yarn;"
+	&& apt-get update  && apt upgrade -y && apt-get install -y nodejs yarn;"
 
 # Si ./configure.sh defense -> On lance un container pr defense = git clone
 # du repo vogsphere depuis host + copie du projet dans le container +
