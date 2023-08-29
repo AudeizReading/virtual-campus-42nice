@@ -27,6 +27,7 @@ Only allowed for the **42 Nice** campus. *This is not an official 42 tool.*
     1. [Readline](#readline)
     1. [Firefox](#firefox)
     1. [Docker](#docker)
+    1. [OpenGL](#opengl)
     1. [Exit container](#exit)
     1. [Reenter container](#rerun)
     1. [Uninstall container](#uninstall)
@@ -57,6 +58,35 @@ Only allowed for the **42 Nice** campus. *This is not an official 42 tool.*
 - **42 SSH key** && **git** set up on your personal workstation.
 - **X server** (needed for running GUI applications from the container into your own workstation)
 - **bash**
+
+> <picture>
+>   <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/Mqxx/GitHub-Markdown/main/blockquotes/badge/light-theme/warning.svg">
+>   <img alt="Warning" src="https://raw.githubusercontent.com/Mqxx/GitHub-Markdown/main/blockquotes/badge/dark-theme/warning.svg">
+> </picture><br>
+>
+> If you are a MacOSX Silicon chip user, you may have troubles with Docker. Take care
+> to install the `arm64` version of the Docker Desktop.  
+> If you are still in trouble, try to apply first what is explained [>>> HERE <<<](https://collabnix.com/warning-the-requested-images-platform-linux-amd64-does-not-match-the-detected-host-platform-linux-arm64-v8/), then open
+> an issue, if it does not still work, we will see what is possible to do.
+
+> <picture>
+>   <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/Mqxx/GitHub-Markdown/main/blockquotes/badge/light-theme/info.svg">
+>   <img alt="Info" src="https://raw.githubusercontent.com/Mqxx/GitHub-Markdown/main/blockquotes/badge/dark-theme/info.svg">
+> </picture><br>
+>
+> Info (contribution de @louchebem06)
+>
+> Recommandation pour les utilisateurs Linux et macOS
+> Si vous utilisez Linux ou macOS, vous pouvez envisager une alternative à Docker Desktop pour gérer vos conteneurs. Une excellente option est Orbstack, que vous pourriez préférer en raison de sa faible utilisation des ressources système.
+> 
+> Orbstack offre de nombreux avantages par rapport à Docker Desktop en termes d'efficacité et de légèreté, ce qui peut améliorer considérablement les performances de votre système. Cependant, veuillez noter qu'Orbstack n'est pas compatible avec Windows, y compris Windows Subsystem for Linux (WSL).
+> 
+> Si vous êtes sur Linux ou macOS, vous pouvez suivre ces étapes pour utiliser Orbstack :
+> 
+> Visitez le site web d'Orbstack à https://orbstack.dev/.
+> Suivez les instructions d'installation spécifiques à votre système d'exploitation pour obtenir Orbstack.
+> Une fois Orbstack installé, vous pouvez l'utiliser pour gérer vos conteneurs de manière plus efficace et économiser des ressources système.
+> N'hésitez pas à explorer Orbstack comme une alternative à Docker Desktop si vous êtes sur Linux ou macOS. Cela peut améliorer votre expérience de développement et de gestion de conteneurs tout en préservant les ressources de votre système.
 
 #### X Server Installation
 
@@ -238,7 +268,8 @@ container.
 ### Current Usage
 
 You are in an Ubuntu 20.04 environment. You have access to all the builtins
-provided by default and other tools listed below. See also the Tools section.
+provided by default and other tools listed below. See also the [Tools
+section](#tools).
 
 No `sudo` is configured. As its vocation is not to be persistent, you are
 `root` into the container, *albeit this is a bad practice to not configure
@@ -340,6 +371,74 @@ directly the container for stopping and removing it.
 
 </details>
 
+<details id="opengl" open><summary><b>OpenGL (all)</b></summary>
+
+> <picture>
+>   <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/Mqxx/GitHub-Markdown/main/blockquotes/badge/light-theme/warning.svg">
+>   <img alt="Warning" src="https://raw.githubusercontent.com/Mqxx/GitHub-Markdown/main/blockquotes/badge/dark-theme/warning.svg">
+> </picture><br>
+> 
+> The only attempt to test this feature has been done under **MacOSX**. I am
+not sure another platform will connect to the X server correctly. Open an issue
+if it happens.
+>
+> The use of **OpenGL** is **GPU** related. That means if your GPU can not support
+> the prerequesites needed by OpenGL, it never will. The only solution for, is to change the GPU...
+>
+> There is also a limitation for the MacOSX Host users. As the [documentation](https://www.khronos.org/opengl/wiki/OpenGL_Context) mentionned, there is no way to get access to features after OpenGL 2.1. No need to say that it is the only version I was able to install through the container. Indeed, this is OpenGL 1.4, with max capabilities to 2.1. `mesa` is under version 21.
+
+You can test the well installation by typing this command: 
+
+```bash
+glxgears
+```
+
+A window should open, indicating OpenGL is usable from the container.
+
+You can compile your program with the follwing commands:
+
+```bash
+g++ main.cpp -lglut -lGLU -lGL -o firstOpenGlApp
+```
+
+For having a little ready-made exemple to see, compile this code snippet
+
+```c++
+#include <GL/glut.h>
+
+void displayMe(void)
+{
+    glClear(GL_COLOR_BUFFER_BIT);
+    glBegin(GL_POLYGON);
+        glVertex3f(0.5, 0.0, 0.5);
+        glVertex3f(0.5, 0.0, 0.0);
+        glVertex3f(0.0, 0.5, 0.0);
+        glVertex3f(0.0, 0.0, 0.5);
+    glEnd();
+    glFlush();
+}
+
+int main(int argc, char** argv)
+{
+    	glutInit(&argc, argv);
+    	glutInitDisplayMode(GLUT_SINGLE);
+    	glutInitWindowSize(400, 300);
+    	glutInitWindowPosition(100, 100);
+    	glutCreateWindow("Hello world!");
+    	glutDisplayFunc(displayMe);
+    	glutMainLoop();
+    	return 0;
+}
+```
+
+For getting the OpenGL Version you have been lucky to install:
+
+```bash
+glxinfo | grep "OpenGL version"
+```
+
+</details>
+
 <details id="exit"><summary><b>Exit container (all)</b></summary>
 
 Inside the container:
@@ -416,10 +515,12 @@ Android phone as launcher (but I would not recommend that).
 If you have downloaded the virtual-campus before these dates following, please
 update it [>>> HERE <<<](#update). It might not work with the version you've
 owned.
-- 28th August 2023.
+- 9th September 2023.
 
 <details id="calendar"><summary><b>Calendar of previous changes</b></summary>
 
+- 8th September 2023.
+- 28th August 2023.
 - 18th August 2023.
 - 06th August 2023.
 
@@ -427,7 +528,7 @@ owned.
 
 #### Last version
 
-We are on the v6.0.2 version of the project. Tags are coming soon.
+We are on the v6.1.2 version of the project. Tags are coming soon.
 
 #### Last Changes
  
@@ -436,8 +537,14 @@ We are on the v6.0.2 version of the project. Tags are coming soon.
 >   <img alt="Info" src="https://raw.githubusercontent.com/Mqxx/GitHub-Markdown/main/blockquotes/badge/dark-theme/info.svg">
 > </picture><br>
 >
+> - Integrating OpenGL.
+> - Integrating better checks for invalid paths (we still can not create new
+>   work directory from container). You can now quit if you were mistaken
+> - Check for sudo rights
+> - Typo fix
+> - Check if Docker is running
+> - Integrating Pull Requests related to xhost execution and typos fixs **#3**.  
 > - Integrating Pull Requests related to bash execution **#1** and **#2**.  
-> - Rewriting the README.
 
 ### Preinstalled Tools [Docker Ubuntu 20.04](https://hub.docker.com/repository/docker/audeizreading/virtual-campus-42nice/general)
 
@@ -461,7 +568,7 @@ We are on the v6.0.2 version of the project. Tags are coming soon.
 |[software-properties-common](https://packages.ubuntu.com/focal/software-properties-common)||||
 |[build-essential](https://packages.ubuntu.com/focal/build-essential) *(libc6, make, gcc, g++)*||||
 
-The base image is about **2.25GB**. This base is pre-built. Be aware of this, when you add optional features. 
+The base image is about **2.52GB**. This base is pre-built. Be aware of this, when you add optional features. 
 
 You can look at this image at this link : [Docker Ubuntu 20.04](https://hub.docker.com/repository/docker/audeizreading/virtual-campus-42nice/general).
 
@@ -514,7 +621,7 @@ there is a human behind the screen. Sometimes, it is just a matter of misunderst
 <details><summary><b>Guidelines</b></summary>
 
 If you find a security vulnerability, do NOT open an issue. Email
-[alellouc[at]42nice[dot]student[dot]fr](mailto://alellouc@student.42nice.fr) instead.
+[alellouc@student.42nice.fr](mailto://alellouc@student.42nice.fr) instead.
 
 If you noticed any bug, unexpected behaviour, please open an issue.
 
@@ -629,6 +736,6 @@ The project is under GNU GPLv3 license. You will find it here:
 
 ### Authors
 
-[AudeizReading](https://github.com/AudeizReading): You can contact me at [alellouc[at]42nice[dot]student[dot]fr](mailto://alellouc@student.42nice.fr), or via our regular private 42 communication tools.
+[AudeizReading](https://github.com/AudeizReading): You can contact me at [alellouc@student.42nice.fr](mailto://alellouc@student.42nice.fr), or via our regular private 42 communication tools.
 
 <sub>This project is subject to change on a regular basis.</sub>
