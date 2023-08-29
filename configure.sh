@@ -5,17 +5,65 @@
 # $3 : what to install
 function install_optional_software 
 {
-	printf "Install   \033[33m%10s\033[0m?\t%20s: " ${1} "[y/n]"
+	printf "Install \033[33m%10s\033[0m?\t%20s: " ${1} "[y/N]"
 	read -n 1 answer
-	printf "\n"
 	#
 	if [ "${answer}" = "y" ]
 	then
+		printf "\n"
 		cat >> ${2} << EOF
 ${3}
 EOF
 	fi
 }
+
+function display_error {
+	printf "\033[31m[ERROR] $1\033[0m\n";
+}
+
+FOLDER=""
+path_work=""
+
+# TODO Laisser la possibilité de créer le répertoire
+function normalize_path {
+	printf "Enter the path of the folder you need to access in real-time.\n"
+	read -p "Your path: " path_work
+	printf "\n"
+	path_display="${path_work}"
+	eval path_work="${path_work}" # Sinon ca n'expand pas les ~ et $HOME
+	if [ -n "${path_work}" ] && [ -d "${path_work}" ]
+	then
+		## si path relatif, on convertit en path absolu
+		if [ "${path_work:0:3}" = "../" ] || [ "${path_work:0:2}" = "./" ]
+		then
+			path_work=`readlink -f "${path_work}"`
+		fi	
+		# recup dernier troncon du path et preparation des differents paths dont
+		# on va se servir pour faire du temps-reel
+		FOLDER=`basename "${path_work}"`
+		OPTSINSTALL="-v ${path_work}:/tmp/dev/${FOLDER} "${OPTSINSTALL}
+		return 0
+	else
+		display_error "Invalid Path ${path_display}"
+		printf "Do you want to keep your choice?\n(an invalid path will anyway be rejected) %20s: " "[y/q/N]"
+		read -n 1 answer
+		printf "\n"
+		if [ "${answer}" = "y" ] && [ -z "${path_work}" ]
+		then
+			return 0
+		elif [ "${answer}" = "q" ];
+		then
+			display_error "EXIT"
+			exit 1;
+		fi
+		return 1
+	fi	
+}
+
+if ! docker info >/dev/null 2>&1; then
+	display_error "Docker does not seem to be running, run it first and retry"
+    exit 1
+fi
 
 # Si ./configure.sh run (on relance le container duquel on a exit)
 if [ "${1}" = "run" ]
@@ -26,8 +74,21 @@ then
 fi 
 
 # Si OS == Mac, update xhost pr X11
-if [ `uname ` = "Darwin" ]; then \
-	xhost +localhost; \
+if [ `uname ` = "Darwin" ];then
+	# Regarde si la commande ne va pas crash
+	if ! [ -x "$(command -v xhost)" ];then
+		display_error "Prerequesites X Server command default 'xhost'";
+	else
+		# Pour autoriser l'utilisation du GPU pour OpenGL -> checker si pas de
+		# soucis pour les autres users
+		printf "Your sudo password will be asked for X11 setup (it is not keeped)."
+		sudo defaults write org.xquartz.X11 enable_iglx -bool true
+		if [ $? -ne 0 ];then
+			printf "You need sudo rights for enabling org.xquartz.x11."
+			exit 1;
+		fi
+		xhost +localhost;
+	fi
 fi 
 
 # Debut Dockerfile, on recup l'image ubuntu 20.04 que j'ai pre-built
@@ -66,6 +127,7 @@ install_optional_software "Node.js" "${OPTSFILE}" "curl -fsSL https://deb.nodeso
 	&& echo \"deb [signed-by=/usr/share/keyrings/yarnkey.gpg] https://dl.yarnpkg.com/debian stable main\" | tee /etc/apt/sources.list.d/yarn.list \\
 	&& apt-get update  && apt upgrade -y && apt-get install -y nodejs yarn;"
 
+install_optional_software "OpenGL" "${OPTSFILE}" "add-apt-repository ppa:oibaf/graphics-drivers && apt-get update -y && apt-get dist-upgrade -y && apt-get install -y libxmu-dev libxi-dev libgl-dev glew-utils libglu1-mesa-dev freeglut3-dev mesa-common-dev mesa-utils libgl1-mesa-dri libgl1-mesa-glx libglu1-mesa libosmesa6-dev libosmesa6 mesa-va-drivers mesa-vulkan-drivers freeglut3 libglew-dev mesa-vdpau-drivers && echo \"export LIBGL_ALWAYS_INDIRECT=1\\nexport MESA_GL_VERSION_OVERRIDE=4.3\\n\" >> /etc/bash.bashrc"
 # Si ./configure.sh defense -> On lance un container pr defense = git clone
 # du repo vogsphere depuis host + copie du projet dans le container +
 # positionnement dans le repertoire de correction au demarrage du container
@@ -75,7 +137,14 @@ then
 	read -p "Provide the repo's url: " repo
 	if [ -n ${repo} ]; 
 	then
+		rm -rf ./corrections
 		git clone ${repo} ./corrections
+		if [ $? -ne 0 ];
+		then
+			display_error "The clone encounters trouble..."
+			rm -rf ./corrections
+			exit 1
+		fi
 	fi
 	cat >> ${DOCKERFILE} << EOF
 WORKDIR /tmp/corrections
@@ -106,38 +175,28 @@ ENV MAIL=${login42}@student.42nice.fr
 EOF
 	fi
 
-	# Configuration pour mettre le container en real-time 
-	# Si pas de path, pas de real-time
-	printf "Enter the path of the folder you need to access in real-time.\n"
-	read -p "Your path: " path_work
-	printf "\n"
-	eval path_work="${path_work}" # Sinon ca n'expand pas les ~ et $HOME
-	if [ -n "${path_work}" ] && [ -d "${path_work}" ]
-	then
-		## si path relatif, on convertit en path absolu
-		if [ "${path_work:0:3}" = "../" ] || [ "${path_work:0:2}" = "./" ]
-		then
-			path_work=`readlink -f "${path_work}"`
-		fi	
-		# recup dernier troncon du path et preparation des differents paths dont
-		# on va se servir pour faire du temps-reel
-		FOLDER=`basename "${path_work}"`
-		OPTSINSTALL="-v ${path_work}:/tmp/dev/${FOLDER} "${OPTSINSTALL}
-		cat >> ${DOCKERFILE} << EOF
+	ret=1
+	while [ "${ret}" -ne 0 ];
+	do
+		normalize_path
+		ret=$?
+	done
+cat >> ${DOCKERFILE} << EOF
 WORKDIR /tmp/dev/${FOLDER}
 EOF
-	else
-		printf "\t\033[47;31mInvalid path\033[0m\n"
-	fi
 fi
 
 cat >> ${DOCKERFILE} << EOF
 ENTRYPOINT [ "/bin/bash" ]
 EOF
 
+
 # Mise en place du container
 make launch NAME="${CONTAINER_NAME}" OPTSINSTALL="${OPTSINSTALL}"
 if [ "${1}" = "defense" ]
 then
-	make destroy
+	if [[ `docker inspect -f '{{.State.Status}}' "${CONTAINER_NAME}" 2>/dev/null` = "exited" ]]
+	then
+		make destroy
+	fi
 fi
