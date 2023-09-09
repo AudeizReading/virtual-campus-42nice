@@ -528,7 +528,7 @@ owned.
 
 #### Last version
 
-We are on the v6.1.2 version of the project. Tags are coming soon.
+We are on the v6.1.3 version of the project. Tags are coming soon.
 
 #### Last Changes
  
