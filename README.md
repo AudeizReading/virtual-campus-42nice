@@ -371,7 +371,7 @@ directly the container for stopping and removing it.
 
 </details>
 
-<details id="opengl" open><summary><b>OpenGL (all)</b></summary>
+<details id="opengl"><summary><b>OpenGL (all)</b></summary>
 
 > <picture>
 >   <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/Mqxx/GitHub-Markdown/main/blockquotes/badge/light-theme/warning.svg">
