@@ -5,7 +5,7 @@
 # $3 : what to install
 function install_optional_software 
 {
-	printf "Install   \033[33m%10s\033[0m?\t%20s: " ${1} "[y/N]"
+	printf "Install   \033[33m%10s\033[0m?\t%20s: " ${1} "[y/n]"
 	read -n 1 answer
 	printf "\n"
 	#
@@ -17,11 +17,6 @@ EOF
 	fi
 }
 
-# $1 : Message error
-function display_error {
-	printf "\033[31m[ERROR] $1\033[0m\n";
-}
-
 # Si ./configure.sh run (on relance le container duquel on a exit)
 if [ "${1}" = "run" ]
 then
@@ -31,13 +26,8 @@ then
 fi 
 
 # Si OS == Mac, update xhost pr X11
-if [ `uname ` = "Darwin" ];then
-	# Regarde si la commande ne va pas crash
-	if ! [ -x "$(command -v xhost)" ];then
-		display_error "Prerequesites X Server command default 'xhost'";
-	else
-		xhost +localhost;
-	fi
+if [ `uname ` = "Darwin" ]; then \
+	xhost +localhost; \
 fi 
 
 # Debut Dockerfile, on recup l'image ubuntu 20.04 que j'ai pre-built
@@ -144,12 +134,6 @@ fi
 cat >> ${DOCKERFILE} << EOF
 ENTRYPOINT [ "/bin/bash" ]
 EOF
-
-# Regarde si docker est lancer
-if ! [ -x "$(command -v docker container ls)" ];then
-	display_error "Please run docker";
-	exit 1;
-fi
 
 # Mise en place du container
 make launch NAME="${CONTAINER_NAME}" OPTSINSTALL="${OPTSINSTALL}"
