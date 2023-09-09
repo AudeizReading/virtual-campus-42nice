@@ -60,18 +60,52 @@ function normalize_path {
 	fi	
 }
 
+# Check etat Docker
 if ! docker info >/dev/null 2>&1; then
 	display_error "Docker does not seem to be running, run it first and retry"
     exit 1
 fi
 
-# Si ./configure.sh run (on relance le container duquel on a exit)
-if [ "${1}" = "run" ]
+if [ "${1}" = "dev" ]
 then
-	docker restart virtual-campus-42nice
-	docker attach virtual-campus-42nice
+	CONTAINER_NAME=virtual-campus-42nice
+elif [ "${1}" = "defense" ]
+then
+	CONTAINER_NAME=virtual-defense-42nice
+# Si ./configure.sh run (on relance le container duquel on a exit)
+elif [ "${1}" = "run" ]
+then
+	CONTAINER_NAME=virtual-campus-42nice
+	if [[ `docker inspect -f '{{.State.Status}}' "${CONTAINER_NAME}"` = "exited" ]]
+	then
+		docker restart "${CONTAINER_NAME}"
+		docker attach "${CONTAINER_NAME}"
+		exit 0
+	fi
+fi
+
+# Si le container est en train de tourner c'est peut etre une erreur
+if ( [[ `docker inspect -f '{{.State.Status}}' "${CONTAINER_NAME}" 2>/dev/null` = "running" ]] || [[ `docker inspect -f '{{.State.Status}}' "${CONTAINER_NAME}" 2> /dev/null` = "exited" ]] ) && ! [[ ${1} = "run" ]]
+then
+	if [ "${1}" = "dev" ];
+	then
+		display_error "${CONTAINER_NAME} is still running. Do you want to keep it? [Y/n]:"
+		read -n1 answer
+		if [ "${answer}" = "n" ]; then
+			make uninstall
+		else
+			make run
+		fi
+	elif [ "${2}" = "defense" ];
+	then
+		display_error "${CONTAINER_NAME} is still running.\nIt will be removed, and you will have to restart the container.\n"
+		make destroy
+	fi
+	# Obligé de sortir, impossible de relancer l'install du container dans la foulee
 	exit 0
-fi 
+fi
+# Fin check Docker
+
 
 # Si OS == Mac, update xhost pr X11
 if [ `uname ` = "Darwin" ];then
@@ -83,8 +117,9 @@ if [ `uname ` = "Darwin" ];then
 		# soucis pour les autres users
 		printf "Your sudo password will be asked for X11 setup (it is not keeped)."
 		sudo defaults write org.xquartz.X11 enable_iglx -bool true
+		printf "\n"
 		if [ $? -ne 0 ];then
-			printf "You need sudo rights for enabling org.xquartz.x11."
+			printf "You need sudo rights for enabling org.xquartz.x11.\n"
 			exit 1;
 		fi
 		xhost +localhost;
@@ -95,7 +130,6 @@ fi
 DOCKERFILE=Dockerfile
 OPTSFILE=install-opts.sh
 OPTSINSTALL=""
-CONTAINER_NAME=virtual-campus-42nice
 
 echo > "${OPTSFILE}"
 cat > ${DOCKERFILE} << EOF
@@ -151,7 +185,6 @@ WORKDIR /tmp/corrections
 COPY ./corrections .
 
 EOF
-	CONTAINER_NAME=virtual-defense-42nice
 elif [ "${1}" = "dev" ]
 	# Si ./configure.sh dev -> on cree un container pour un environnement de dev
 then
