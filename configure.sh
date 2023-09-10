@@ -7,13 +7,16 @@ function install_optional_software
 {
 	printf "Install \033[33m%10s\033[0m?\t%20s: " ${1} "[y/N]"
 	read -n 1 answer
-	#
+	
 	if [ "${answer}" = "y" ]
 	then
-		printf "\n"
 		cat >> ${2} << EOF
 ${3}
 EOF
+	fi
+	if [ -n "${answer}" ]
+	then
+		printf "\n"
 	fi
 }
 
