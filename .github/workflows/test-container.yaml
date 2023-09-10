@@ -1,0 +1,7 @@
+name: Run container in various way
+
+on:
+  pull_request:
+    branches: [ main ]
+
+jobs:
