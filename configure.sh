@@ -190,6 +190,8 @@ FROM audeizreading/virtual-campus-42nice:latest
 
 EOF
 
+# Maj norminette a l'instruction ON-BUILT de l'image de base
+# Ca ne change rien, la maj se fera a chq make install ou make defense
 cat >> "${OPTSFILE}" << EOF
 python3 -m pip install --upgrade norminette;
 
@@ -220,6 +222,7 @@ install_optional_software "Node.js" "${OPTSFILE}" "curl -fsSL https://deb.nodeso
 	&& apt-get update  && apt upgrade -y && apt-get install -y nodejs yarn;"
 
 install_optional_software "OpenGL" "${OPTSFILE}" "apt -y install software-properties-common dirmngr apt-transport-https lsb-release ca-certificates && add-apt-repository -usy ppa:oibaf/graphics-drivers && apt-get install -y libxmu-dev libxi-dev libgl-dev glew-utils libglu1-mesa-dev freeglut3-dev mesa-common-dev mesa-utils libgl1-mesa-dri libgl1-mesa-glx libglu1-mesa libosmesa6-dev libosmesa6 mesa-va-drivers mesa-vulkan-drivers freeglut3 libglew-dev mesa-vdpau-drivers && echo \"export LIBGL_ALWAYS_INDIRECT=1\\nexport MESA_GL_VERSION_OVERRIDE=4.3\\n\" >> /etc/bash.bashrc"
+
 # Si ./configure.sh defense -> On lance un container pr defense = git clone
 # du repo vogsphere depuis host + copie du projet dans le container +
 # positionnement dans le repertoire de correction au demarrage du container
