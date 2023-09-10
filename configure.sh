@@ -17,13 +17,42 @@ EOF
 	fi
 }
 
+# $1 : msg d'erreur
 function display_error {
 	printf "\033[31m[ERROR] $1\033[0m\n";
 }
 
+# $1 : msg
+function warn {
+	printf "\033[35m%10s\033[0m\033[4m%-s\033[0m\n" "[WARN]: " "$1"
+}
+
+# check si on est sur Mac, si chip Intel ou Mxx (souci avec OpenGL)
+function isMacHost {
+	if [ `uname` = "Darwin" ]
+	then
+		echo "yes"
+		return 1;
+	fi
+	echo "no"
+	return 0;
+}
+
+function isMxxMac {
+	if [ `isMacHost` = "yes" ]
+	then
+		cpu=`sysctl -n machdep.cpu.brand_string`
+		if ! [[ "${cpu}" =~ "Intel" ]]
+		then
+			warn "Your CPU is ${cpu}"
+			return 1;
+		fi
+	fi
+	return 0;
+}
+
 FOLDER=""
 path_work=""
-
 # TODO Laisser la possibilité de créer le répertoire
 function normalize_path {
 	printf "Enter the path of the folder you need to access in real-time.\n"
@@ -133,7 +162,7 @@ OPTSINSTALL=""
 
 echo > "${OPTSFILE}"
 cat > ${DOCKERFILE} << EOF
-FROM audeizreading/virtual-campus-42nice:latest
+FROM --platform=linux/amd64 audeizreading/virtual-campus-42nice:latest
 
 EOF
 
@@ -161,7 +190,13 @@ install_optional_software "Node.js" "${OPTSFILE}" "curl -fsSL https://deb.nodeso
 	&& echo \"deb [signed-by=/usr/share/keyrings/yarnkey.gpg] https://dl.yarnpkg.com/debian stable main\" | tee /etc/apt/sources.list.d/yarn.list \\
 	&& apt-get update  && apt upgrade -y && apt-get install -y nodejs yarn;"
 
-install_optional_software "OpenGL" "${OPTSFILE}" "add-apt-repository ppa:oibaf/graphics-drivers && apt-get update -y && apt-get dist-upgrade -y && apt-get install -y libxmu-dev libxi-dev libgl-dev glew-utils libglu1-mesa-dev freeglut3-dev mesa-common-dev mesa-utils libgl1-mesa-dri libgl1-mesa-glx libglu1-mesa libosmesa6-dev libosmesa6 mesa-va-drivers mesa-vulkan-drivers freeglut3 libglew-dev mesa-vdpau-drivers && echo \"export LIBGL_ALWAYS_INDIRECT=1\\nexport MESA_GL_VERSION_OVERRIDE=4.3\\n\" >> /etc/bash.bashrc"
+isMxxMac
+if [ $? -eq 0 ]
+then
+install_optional_software "OpenGL" "${OPTSFILE}" "add-apt-repository -usy ppa:oibaf/graphics-drivers && apt-get install -y libxmu-dev libxi-dev libgl-dev glew-utils libglu1-mesa-dev freeglut3-dev mesa-common-dev mesa-utils libgl1-mesa-dri libgl1-mesa-glx libglu1-mesa libosmesa6-dev libosmesa6 mesa-va-drivers mesa-vulkan-drivers freeglut3 libglew-dev mesa-vdpau-drivers && echo \"export LIBGL_ALWAYS_INDIRECT=1\\nexport MESA_GL_VERSION_OVERRIDE=4.3\\n\" >> /etc/bash.bashrc"
+else
+	display_error "You cannot install OpenGL because of the incompatibily of the installation. I Hope it will be fixed soon!."
+fi
 # Si ./configure.sh defense -> On lance un container pr defense = git clone
 # du repo vogsphere depuis host + copie du projet dans le container +
 # positionnement dans le repertoire de correction au demarrage du container
