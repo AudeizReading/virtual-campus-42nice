@@ -437,6 +437,9 @@ For getting the OpenGL Version you have been lucky to install:
 glxinfo | grep "OpenGL version"
 ```
 
+Interesting reading: [Archive OpenGL MACOSX](https://developer.apple.com/library/archive/documentation/GraphicsImaging/Conceptual/OpenGL-MacProgGuide/opengl_pg_concepts/opengl_pg_concepts.html#//apple_ref/doc/uid/TP40001987-CH208-SW1)  
+
+
 </details>
 
 <details id="exit"><summary><b>Exit container (all)</b></summary>
