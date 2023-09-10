@@ -144,11 +144,9 @@ if [ `uname ` = "Darwin" ];then
 	else
 		# Pour autoriser l'utilisation du GPU pour OpenGL -> checker si pas de
 		# soucis pour les autres users
-		printf "Your sudo password will be asked for X11 setup (it is not keeped)."
 		defaults write org.xquartz.X11 enable_iglx -bool true
-		printf "\n"
 		if [ $? -ne 0 ];then
-			printf "You need sudo rights for enabling org.xquartz.x11.\n"
+			printf "It seems that the rights needed for enabling org.xquartz.x11. were not written manually.\Please run the following manually on your host: \033[4mdefaults write org.xquartz.X11 enable_iglx\0330m\n"
 			exit 1;
 		fi
 		xhost +localhost;
