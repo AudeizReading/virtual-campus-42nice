@@ -518,10 +518,11 @@ Android phone as launcher (but I would not recommend that).
 If you have downloaded the virtual-campus before these dates following, please
 update it [>>> HERE <<<](#update). It might not work with the version you've
 owned.
-- 9th September 2023.
+- 10th September 2023.
 
 <details id="calendar"><summary><b>Calendar of previous changes</b></summary>
 
+- 9th September 2023.
 - 8th September 2023.
 - 28th August 2023.
 - 18th August 2023.
@@ -531,7 +532,7 @@ owned.
 
 #### Last version
 
-We are on the v6.1.3 version of the project. Tags are coming soon.
+We are on the v6.1.5 version of the project. Tags are coming soon.
 
 #### Last Changes
  
@@ -540,7 +541,8 @@ We are on the v6.1.3 version of the project. Tags are coming soon.
 >   <img alt="Info" src="https://raw.githubusercontent.com/Mqxx/GitHub-Markdown/main/blockquotes/badge/dark-theme/info.svg">
 > </picture><br>
 >
-> - Integrating OpenGL.
+> - Fix bugs norminette, install opengl, node.js 18, bugs X11, remove sudo rights
+> - Integrating OpenGL. / fix bugs
 > - Integrating better checks for invalid paths (we still can not create new
 >   work directory from container). You can now quit if you were mistaken
 > - Check for sudo rights
