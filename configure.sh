@@ -192,13 +192,7 @@ install_optional_software "Node.js" "${OPTSFILE}" "curl -fsSL https://deb.nodeso
 	&& echo \"deb [signed-by=/usr/share/keyrings/yarnkey.gpg] https://dl.yarnpkg.com/debian stable main\" | tee /etc/apt/sources.list.d/yarn.list \\
 	&& apt-get update  && apt upgrade -y && apt-get install -y nodejs yarn;"
 
-#isMxxMac
-#if [ $? -eq 0 ]
-#then
 install_optional_software "OpenGL" "${OPTSFILE}" "apt -y install software-properties-common dirmngr apt-transport-https lsb-release ca-certificates && add-apt-repository -usy ppa:oibaf/graphics-drivers && apt-get install -y libxmu-dev libxi-dev libgl-dev glew-utils libglu1-mesa-dev freeglut3-dev mesa-common-dev mesa-utils libgl1-mesa-dri libgl1-mesa-glx libglu1-mesa libosmesa6-dev libosmesa6 mesa-va-drivers mesa-vulkan-drivers freeglut3 libglew-dev mesa-vdpau-drivers && echo \"export LIBGL_ALWAYS_INDIRECT=1\\nexport MESA_GL_VERSION_OVERRIDE=4.3\\n\" >> /etc/bash.bashrc"
-#else
-#	display_error "You cannot install OpenGL because of the incompatibily of the installation. I Hope it will be fixed soon!."
-#fi
 # Si ./configure.sh defense -> On lance un container pr defense = git clone
 # du repo vogsphere depuis host + copie du projet dans le container +
 # positionnement dans le repertoire de correction au demarrage du container
