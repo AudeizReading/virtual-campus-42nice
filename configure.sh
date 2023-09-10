@@ -162,7 +162,7 @@ OPTSINSTALL=""
 
 echo > "${OPTSFILE}"
 cat > ${DOCKERFILE} << EOF
-FROM --platform=linux/amd64 audeizreading/virtual-campus-42nice:latest
+FROM audeizreading/virtual-campus-42nice:latest
 
 RUN python3 -m pip install --upgrade norminette
 
