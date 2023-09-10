@@ -123,6 +123,10 @@ then
 	then
 		display_error "${CONTAINER_NAME} is still running. Do you want to keep it? [Y/n]:"
 		read -n1 answer
+		if [ -n "${answer}" ]
+		then
+			printf "\n"
+		fi
 		if [ "${answer}" = "n" ]; then
 			make uninstall
 		else
@@ -140,19 +144,38 @@ fi
 
 
 # Si OS == Mac, update xhost pr X11
-if [ `uname ` = "Darwin" ];then
+if [ `uname` = "Darwin" ];then
 	# Regarde si la commande ne va pas crash
 	if ! [ -x "$(command -v xhost)" ];then
 		display_error "Prerequesites X Server command default 'xhost'";
 	else
-		# Pour autoriser l'utilisation du GPU pour OpenGL -> checker si pas de
-		# soucis pour les autres users
-		defaults write org.xquartz.X11 enable_iglx -bool true
-		if [ $? -ne 0 ];then
-			printf "It seems that the rights needed for enabling org.xquartz.x11. were not written manually.\Please run the following manually on your host: \033[4mdefaults write org.xquartz.X11 enable_iglx\0330m\n"
-			exit 1;
+		# On enable iglx (nécessaire pour run des apps GUI OpenGL) que si ce
+		# n'est pas deja fait
+		# https://services.dartmouth.edu/TDClient/1806/Portal/KB/ArticleDet?ID=89669
+		iglx_state=`defaults read org.xquartz.X11 | grep enable_iglx | awk '$0 ~ /enable_iglx/ && $3 ~ /1/ {print "iglx enabled"}'`
+		if ! [ "${iglx_state}" = "iglx enabled" ]
+		then
+			xquartz_version=`brew info --cask xquartz | grep xquartz: | awk '$0 ~ /xquartz/ && $3 >= 2.8 {print "sup 2.8"}'`
+			if [ "${xquartz_version}" = "sup 2.8" ]
+			then
+				defaults write org.xquartz.X11 enable_iglx -bool true
+			else
+				defaults write org.macosforge.xquartz.X11 enable_iglx -bool true
+			fi
+			iglx_state=`defaults read org.xquartz.X11 | grep enable_iglx | awk '$0 ~ /enable_iglx/ && $3 ~ /1/ {print "iglx enabled"}'`
+			if ! [ "${iglx_state}" = "iglx enabled" ]
+			then
+				warn "Fatal error encounters when setting up the X11 server.\nPlease type the following instructions into your terminal et restart the installation of the container:\n\t\033[4mdefaults write org.xquartz.X11 enable_iglx -bool true\033[0m\n"
+				exit 1
+			fi
 		fi
-		xhost +localhost;
+		is_localhost_bound_xhost=`xhost | grep localhost | awk 'BEGIN{i = 0;}{if($0 ~ localhost) i++;}END{print i}'`
+		if [ "${is_localhost_bound_xhost}" = "0" ]
+		then
+			# On ajoute localhost a liste des clients du server X11 autorisés
+			# ssi ce n'est pas deja fait
+			xhost +localhost;
+		fi
 	fi
 fi 
 
@@ -165,7 +188,10 @@ echo > "${OPTSFILE}"
 cat > ${DOCKERFILE} << EOF
 FROM audeizreading/virtual-campus-42nice:latest
 
-RUN python3 -m pip install --upgrade norminette
+EOF
+
+cat >> "${OPTSFILE}" << EOF
+python3 -m pip install --upgrade norminette;
 
 EOF
 
