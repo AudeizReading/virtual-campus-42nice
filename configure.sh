@@ -1,11 +1,31 @@
-#/bin/bash
+#!/usr/bin/env bash
+
+# colors constants
+RESET="\033[0m"
+BOLD="\033[1m"
+ITALIC="\033[3m"
+UNDERLINE="\033[4m"
+RED="\033[31m"
+GREEN="\033[32m"
+YELLOW="\033[33m"
+BLUE="\033[34m"
+MAGENTA="\033[35m"
+CYAN="\033[36m"
+WHITE="\033[37m"
+BG_RED="\033[41m"
+BG_GREEN="\033[42m"
+BG_YELLOW="\033[43m"
+BG_BLUE="\033[44m"
+BG_MAGENTA="\033[45m"
+BG_CYAN="\033[46m"
+BG_WHITE="\033[47m"
 
 # $1 : software name
 # $2 : filename where to send
 # $3 : what to install
 function install_optional_software 
 {
-	printf "Install \033[33m%10s\033[0m?\t%20s: " ${1} "[y/N]"
+	printf "Install ${YELLOW}%10s${RESET}?\t%20s: " ${1} "[y/N]"
 	read -n 1 answer
 	
 	if [ "${answer}" = "y" ]
@@ -22,17 +42,30 @@ EOF
 
 # $1 : msg d'erreur
 function display_error {
-	printf "\033[31m[ERROR] $1\033[0m\n";
+	printf "${RED}[ERROR] $1${RESET}\n";
 }
 
 # $1 : msg
 function warn {
-	printf "\033[35m%10s\033[0m\033[4m%-s\033[0m\n" "[WARN]: " "$1"
+	printf "${MAGENTA}%10s${RESET}${UNDERLINE}%-s${RESET}\n" "[WARN]: " "$1"
 }
 
-# check si on est sur Mac, si chip Intel ou Mxx (souci avec OpenGL)
+# Recherche l'OS
+function getHost {
+	host=`uname`
+	case "${host}" in
+		Darwin*)				echo "Mac OS X";;
+		Linux*)					echo "Linux";;
+		Linux*Microsoft)		echo "WSL";;
+		CYGWIN*)				echo "Cygwin";;
+		MINGW*)					echo "Mingw";;
+		MSYS*|Msys)				echo "Git bash";;
+		*)						echo "Not handled";;
+	esac
+}
+
 function isMacHost {
-	if [ `uname` = "Darwin" ]
+	if [ "`getHost`" = "Mac OS X" ]
 	then
 		echo "yes"
 		return 1;
@@ -41,6 +74,27 @@ function isMacHost {
 	return 0;
 }
 
+function isWindowsHost {
+	if [ "`getHost`" = "WSL" ] || [ "`getHost`" = "Cygwin" ] || [ "`getHost`" = "Mingw" ] || [ "`getHost`" = "Git bash" ]
+	then
+		echo "yes"
+		return 1;
+	fi
+	echo "no"
+	return 0;
+}
+
+function isLinuxHost {
+	if [ "`getHost`" = "Linux" ]
+	then
+		echo "yes"
+		return 1;
+	fi
+	echo "no"
+	return 0;
+}
+
+# check si on est sur Mac, si chip Intel ou Mxx (souci avec OpenGL)
 function isMxxMac {
 	if [ `isMacHost` = "yes" ]
 	then
@@ -54,24 +108,50 @@ function isMxxMac {
 	return 0;
 }
 
+function expandString {
+	# expand tilde(~) and env variables ($HOME, $USER...)
+	eval expandString="${1}"
+	echo "${expandString}"
+}
+
+function resolvePath {
+	path="${1}"
+	path=`expandString "${path}"`
+	if [ -e "${path}" ] # Is it a directory or a file?
+	then
+		if [ "${path:0:3}" = "../" ] || [ "${path:0:2}" = "./" ]
+		then
+			#transformation en path absolute
+			expandPath=`readlink -f "${path}"`
+			echo "${expandPath}"
+			return 0
+		elif [ "${path:0:1}" = "/" ]
+		then
+			echo "${path}"
+			return 0
+		else
+			echo "`pwd`${path}"
+			return 0
+		fi
+	else
+		echo "${path}"
+		return 1
+	fi
+}
+
+# function createFolder {}
+
 FOLDER=""
 path_work=""
 # TODO Laisser la possibilité de créer le répertoire
 function normalize_path {
 	printf "Enter the path of the folder you need to access in real-time.\n"
-	read -p "Your path: " path_work
+	read -e -p "Your path: " path_work
 	printf "\n"
 	path_display="${path_work}"
-	eval path_work="${path_work}" # Sinon ca n'expand pas les ~ et $HOME
-	if [ -n "${path_work}" ] && [ -d "${path_work}" ]
+	path_work=`resolvePath "${path_work}"`
+	if [ $? = 0 ]
 	then
-		## si path relatif, on convertit en path absolu
-		if [ "${path_work:0:3}" = "../" ] || [ "${path_work:0:2}" = "./" ]
-		then
-			path_work=`readlink -f "${path_work}"`
-		fi	
-		# recup dernier troncon du path et preparation des differents paths dont
-		# on va se servir pour faire du temps-reel
 		FOLDER=`basename "${path_work}"`
 		OPTSINSTALL="-v ${path_work}:/tmp/dev/${FOLDER} "${OPTSINSTALL}
 		return 0
@@ -92,64 +172,122 @@ function normalize_path {
 	fi	
 }
 
-# Check etat Docker
-if ! docker info >/dev/null 2>&1; then
-	display_error "Docker does not seem to be running, run it first and retry"
-    exit 1
-fi
+function askWorkFolder {
+	ret=1
+	while [ "${ret}" -ne 0 ];
+	do
+		normalize_path
+		ret=$?
+	done
+	cat >> ${DOCKERFILE} << EOF
+WORKDIR /tmp/dev/${FOLDER}
+EOF
+}
 
-if [ "${1}" = "dev" ]
-then
-	CONTAINER_NAME=virtual-campus-42nice
-elif [ "${1}" = "defense" ]
-then
-	CONTAINER_NAME=virtual-defense-42nice
-# Si ./configure.sh run (on relance le container duquel on a exit)
-elif [ "${1}" = "run" ]
-then
-	CONTAINER_NAME=virtual-campus-42nice
-	if [[ `docker inspect -f '{{.State.Status}}' "${CONTAINER_NAME}"` = "exited" ]]
+function importRCFile {
+	# $1: bash ou vim
+	printf "Import ${YELLOW}%17s${RESET}?\t%12s: \n${ITALIC}(%s)${RESET}: " "your ${1} rc file" "[y/N]" "Please consider not using plugins into your rc file, it should not work as it is too much specific to setup."
+	read -n 1 need_rc
+	printf "\n"
+	if [ "${need_rc}" = "y" ]
 	then
-		docker restart "${CONTAINER_NAME}"
-		docker attach "${CONTAINER_NAME}"
+		case "${1}" in
+			bash) 
+				rc=".bashrc"
+				containerPath="/etc/bash${rc}"
+				;;
+			vim) 
+				rc=".vimrc"
+				containerPath="/etc/vim/${rc:1}.local"
+				;;
+		esac
+		userRC="~/${rc}"
+		expandUserRC=`expandString "${userRC}"`
+		resolvedUserRC=`resolvePath "${expandUserRC}"`
+		if [ -e ${resolvedUserRC} ]
+		then
+			fileRC=`cat "${resolvedUserRC}"`
+			echo "${fileRC}"
+			cat >> ${OPTSFILE} << EOF
+echo "${fileRC}" >> ${containerPath}
+EOF
+		else
+			display_error "File ${userRC} not found"
+		fi
+	fi
+}
+
+function checkDockerRunning {
+	# Check etat Docker
+	if ! docker info >/dev/null 2>&1; then
+		display_error "Docker does not seem to be running, run it first and retry"
+    	exit 1
+	fi
+}
+
+function dockerInspect {
+	docker inspect -f '{{.State.Status}}' "${1}" 2> /dev/null
+}
+
+function setContainerName {
+	if [ "${1}" = "dev" ]
+	then
+		CONTAINER_NAME=virtual-campus-42nice
+	elif [ "${1}" = "defense" ]
+	then
+		CONTAINER_NAME=virtual-defense-42nice
+	# Si ./configure.sh run (on relance le container duquel on a exit)
+	elif [ "${1}" = "run" ]
+	then
+		CONTAINER_NAME=virtual-campus-42nice
+		if [[ `dockerInspect "${CONTAINER_NAME}"` = "exited" ]]
+		then
+			docker restart "${CONTAINER_NAME}"
+			docker attach "${CONTAINER_NAME}"
+			exit 0
+		fi
+	fi
+}
+
+function checkContainerState {
+	# Si le container est en train de tourner c'est peut etre une erreur
+	if ( [[ `dockerInspect "${1}"` = "exited" ]] || [[ `dockerInspect "${1}"` = "running" ]] ) && ! [[ "${2}" = "run" ]]
+	then
+		if [ "${2}" = "dev" ];
+		then
+			display_error "${1} is still running. Do you want to keep it? [Y/n]:"
+			read -n1 answer
+			if [ -n "${answer}" ]
+			then
+				printf "\n"
+			fi
+			if [ "${answer}" = "n" ]; then
+				make uninstall
+			else
+				make run
+			fi
+		elif [ "${2}" = "defense" ];
+		then
+			display_error "${1} is still running.\nIt will be removed, and you will have to restart the container.\n"
+			make destroy
+		fi
+		# Obligé de sortir, impossible de relancer l'install du container dans la foulee
 		exit 0
 	fi
-fi
+}
 
-# Si le container est en train de tourner c'est peut etre une erreur
-if ( [[ `docker inspect -f '{{.State.Status}}' "${CONTAINER_NAME}" 2>/dev/null` = "running" ]] || [[ `docker inspect -f '{{.State.Status}}' "${CONTAINER_NAME}" 2> /dev/null` = "exited" ]] ) && ! [[ ${1} = "run" ]]
-then
-	if [ "${1}" = "dev" ];
-	then
-		display_error "${CONTAINER_NAME} is still running. Do you want to keep it? [Y/n]:"
-		read -n1 answer
-		if [ -n "${answer}" ]
+function allowConnectionXServer {
+	is_localhost_bound_xhost=`xhost | grep "${1}" | awk -v host="${1}" 'BEGIN{i = 0;}{if($0 ~ host) i++;}END{print i}'`
+		if [ "${is_localhost_bound_xhost}" = "0" ]
 		then
-			printf "\n"
+			# On ajoute l'host a liste des clients du server X11 autorisés
+			# ssi ce n'est pas deja fait
+			xhost +"${1}";
 		fi
-		if [ "${answer}" = "n" ]; then
-			make uninstall
-		else
-			make run
-		fi
-	elif [ "${2}" = "defense" ];
-	then
-		display_error "${CONTAINER_NAME} is still running.\nIt will be removed, and you will have to restart the container.\n"
-		make destroy
-	fi
-	# Obligé de sortir, impossible de relancer l'install du container dans la foulee
-	exit 0
-fi
-# Fin check Docker
+}
 
-
-# Si OS == Mac, update xhost pr X11
-if [ `uname` = "Darwin" ];then
-	# Regarde si la commande ne va pas crash
-	if ! [ -x "$(command -v xhost)" ];then
-		display_error "Prerequesites X Server command default 'xhost'";
-	else
-		# On enable iglx (nécessaire pour run des apps GUI OpenGL) que si ce
+function enableIglxForMac {
+	# On enable iglx (nécessaire pour run des apps GUI OpenGL) que si ce
 		# n'est pas deja fait
 		# https://services.dartmouth.edu/TDClient/1806/Portal/KB/ArticleDet?ID=89669
 		iglx_state=`defaults read org.xquartz.X11 | grep enable_iglx | awk '$0 ~ /enable_iglx/ && $3 ~ /1/ {print "iglx enabled"}'`
@@ -169,38 +307,55 @@ if [ `uname` = "Darwin" ];then
 				exit 1
 			fi
 		fi
-		is_localhost_bound_xhost=`xhost | grep localhost | awk 'BEGIN{i = 0;}{if($0 ~ localhost) i++;}END{print i}'`
-		if [ "${is_localhost_bound_xhost}" = "0" ]
-		then
-			# On ajoute localhost a liste des clients du server X11 autorisés
-			# ssi ce n'est pas deja fait
-			xhost +localhost;
+}
+
+function setUpXServer {
+	# Si OS == Mac, update xhost pr X11
+	if [ `isMacHost` = "yes" ];then
+		# Regarde si la commande ne va pas crash
+		if ! [ -x "$(command -v xhost)" ];then
+			display_error "Prerequesites X Server command default 'xhost'";
+		else
+				XHOSTDISPLAY="host.docker.internal"
+				enableIglxForMac
+				allowConnectionXServer "localhost"
 		fi
-	fi
-fi 
+	elif [ "`isWindowsHost`" = "yes" ];then
+		if ! [ -x "$(command -v xhost)" ];then
+			display_error "Prerequesites X Server command default 'xhost'\nPlease install it and retry. Check https://sourceforge.net/projects/vcxsrv/ for more information";
+		else
+			XHOSTDISPLAY=""
+			allowConnectionXServer "localhost"
+		fi
+	elif [ "`isLinuxHost`" = "yes" ];then
+			display_error "Why the Hell do you need this tool? You have already what we need !!!! (contact me if you really need to bypass this)";
+	fi 
+}
 
-# Debut Dockerfile, on recup l'image ubuntu 20.04 que j'ai pre-built
-DOCKERFILE=Dockerfile
-OPTSFILE=install-opts.sh
-OPTSINSTALL=""
-
-echo > "${OPTSFILE}"
-cat > ${DOCKERFILE} << EOF
+function recoveringBaseImageDocker {
+	# Debut Dockerfile, on recup l'image ubuntu 20.04 que j'ai pre-built
+	cat > ${DOCKERFILE} << EOF
 FROM audeizreading/virtual-campus-42nice:latest
 
 EOF
+}
 
-# Maj norminette a l'instruction ON-BUILT de l'image de base
-# Ca ne change rien, la maj se fera a chq make install ou make defense
-cat >> "${OPTSFILE}" << EOF
+function updateNorminette {
+	# Maj norminette a l'instruction ON-BUILT de l'image de base
+	# Ca ne change rien, la maj se fera a chq make install ou make defense
+	cat >> "${OPTSFILE}" << EOF
 python3 -m pip install --upgrade norminette;
 
 EOF
+}
 
-install_optional_software "Firefox" "${OPTSFILE}" "apt -y update && apt upgrade -y && apt install -y firefox"
+function suggestFirefox {
+	install_optional_software "Firefox" "${OPTSFILE}" "apt -y update && apt upgrade -y && apt install -y firefox"
+}
 
-answer="n"
-install_optional_software "Docker" "${OPTSFILE}" "apt-get install -y ca-certificates gnupg \\
+function suggestDocker {
+	answer="n"
+	install_optional_software "Docker" "${OPTSFILE}" "apt-get install -y ca-certificates gnupg \\
 	&& install -m 0755 -d /etc/apt/keyrings \\
 	&& curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg \\
 	&& chmod a+r /etc/apt/keyrings/docker.gpg \\
@@ -211,24 +366,69 @@ install_optional_software "Docker" "${OPTSFILE}" "apt-get install -y ca-certific
 	&& usermod -aG docker root \\
 	&& newgrp docker \\
 	&& apt-get remove -y --auto-remove ca-certificates gnupg;"
-if [ "${answer}" = "y" ]
-then
-	OPTSINSTALL="-v /var/run/docker.sock:/var/run/docker.sock "${OPTSINSTALL}
-fi
+	if [ "${answer}" = "y" ]
+	then
+		OPTSINSTALL="-v /var/run/docker.sock:/var/run/docker.sock "${OPTSINSTALL}
+	fi
+}
 
-install_optional_software "Node.js" "${OPTSFILE}" "curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \\
+function suggestNodeJS {
+	install_optional_software "Node.js" "${OPTSFILE}" "curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \\
 	&& curl -sL https://dl.yarnpkg.com/debian/pubkey.gpg | gpg --dearmor | tee /usr/share/keyrings/yarnkey.gpg >/dev/null \\
 	&& echo \"deb [signed-by=/usr/share/keyrings/yarnkey.gpg] https://dl.yarnpkg.com/debian stable main\" | tee /etc/apt/sources.list.d/yarn.list \\
 	&& apt-get update  && apt upgrade -y && apt-get install -y nodejs yarn;"
+}
+function suggestOpenGL {
+	# ppa:kisak/kisak-mesa ou ppa:oibaf/graphics-drivers si on a besoin de mesa 
+	install_optional_software "OpenGL" "${OPTSFILE}" "apt update && apt -y install software-properties-common dirmngr apt-transport-https lsb-release ca-certificates && add-apt-repository -usy ppa:oibaf/graphics-drivers && apt-get install -y libxmu-dev libxi-dev libgl-dev glew-utils libglu1-mesa-dev freeglut3-dev mesa-common-dev mesa-utils libgl1-mesa-dri libgl1-mesa-glx libglu1-mesa libosmesa6-dev libosmesa6 mesa-va-drivers mesa-vulkan-drivers freeglut3 libglew-dev mesa-vdpau-drivers && echo \"export LIBGL_ALWAYS_INDIRECT=1\\nexport MESA_GL_VERSION_OVERRIDE=4.3\\n\" >> /etc/bash.bashrc"
+}
 
-install_optional_software "OpenGL" "${OPTSFILE}" "apt -y install software-properties-common dirmngr apt-transport-https lsb-release ca-certificates && add-apt-repository -usy ppa:oibaf/graphics-drivers && apt-get install -y libxmu-dev libxi-dev libgl-dev glew-utils libglu1-mesa-dev freeglut3-dev mesa-common-dev mesa-utils libgl1-mesa-dri libgl1-mesa-glx libglu1-mesa libosmesa6-dev libosmesa6 mesa-va-drivers mesa-vulkan-drivers freeglut3 libglew-dev mesa-vdpau-drivers && echo \"export LIBGL_ALWAYS_INDIRECT=1\\nexport MESA_GL_VERSION_OVERRIDE=4.3\\n\" >> /etc/bash.bashrc"
+function suggest42Header {
+	# Configuration en tete 42
+	printf "Configure ${YELLOW}%10s${RESET}?\t%20s: " "42 header" "[y/N]"
+	read -n 1 need_header
+	printf "\n"
+	if [ "${need_header}" = "y" ]
+	then
+		printf "Enter your ${YELLOW}%10s${RESET}\t%20s: " "42 login" "(8 max)"
+		# TODO: pouvoir effacer sa saisie si on se trompe
+		read -en 9 login42
+		login42="${login42:0:8}"
+		res=1
+		if [ -z ${login42} ] || [ ${login42} = "\n" ]
+		then
+			login42="${USER}"
+		else # on verife que la saisie est ok sinon on refait saisir
+			while [ ${res} -ne 0 ];
+			do
+				printf "You have entered: ${CYAN}%s${RESET}.\nConfirm?\t%30s: " "${login42}" "[Y/n]"
+				read -n 1 answer
+				if [ "${answer}" = "n" ]
+				then
+					printf "Enter your ${YELLOW}%10s${RESET}\t%20s: " "42 login" "(8 max)"
+					read -en 9 login42
+					login42="${login42:0:8}"
+					res=1
+				else
+					res=0
+				fi
+			done
+		fi
+		printf "\n"
+		cat >> ${OPTSFILE} << EOF
+echo "export USER=${login42}\nexport MAIL=${login42}@student.42nice.fr\n" >> /etc/bash.bashrc
 
-# Si ./configure.sh defense -> On lance un container pr defense = git clone
-# du repo vogsphere depuis host + copie du projet dans le container +
-# positionnement dans le repertoire de correction au demarrage du container
-# Tout est erase lorsqu'on quitte le container
-if [ "${1}" = "defense" ]
-then
+EOF
+	fi
+}
+
+function setUpEntrypoint {
+	cat >> ${DOCKERFILE} << EOF
+ENTRYPOINT [ "/bin/bash" ]
+EOF
+}
+
+function setUpDefenseContainer {
 	read -p "Provide the repo's url: " repo
 	if [ -n ${repo} ]; 
 	then
@@ -246,51 +446,54 @@ WORKDIR /tmp/corrections
 COPY ./corrections .
 
 EOF
-elif [ "${1}" = "dev" ]
-	# Si ./configure.sh dev -> on cree un container pour un environnement de dev
-then
-	# Configuration en tete 42
-	printf "Configure \033[33m%10s\033[0m?\t%20s: " "42 header" "[y/n]"
-	read -n 1 need_header
-	printf "\n"
-	if [ "${need_header}" = "y" ]
+}
+function setUpDevContainer {
+	suggest42Header
+	askWorkFolder
+}
+
+function generateConfigFiles {
+	# Debut Dockerfile, on recup l'image ubuntu 20.04 que j'ai pre-built
+	DOCKERFILE=Dockerfile
+	OPTSFILE=install-opts.sh
+	OPTSINSTALL=""
+
+	echo > "${OPTSFILE}"
+	recoveringBaseImageDocker
+	updateNorminette
+	suggestFirefox
+	suggestDocker
+	suggestNodeJS
+	suggestOpenGL
+	importRCFile "bash"
+	importRCFile "vim"
+	if [ "${1}" = "defense" ]
 	then
-		printf "Enter your \033[33m%10s\033[0m\t%20s: " "42 login" "(8 max)"
-		read -n 8 login42
-		if [ -z ${login42} ] || [ ${login42} = "\n" ]
+		setUpDefenseContainer
+	elif [ "${1}" = "dev" ]
+	then
+		setUpDevContainer
+	fi
+	setUpEntrypoint
+}
+
+function startContainer {
+	# Mise en place du container
+	make launch NAME="${CONTAINER_NAME}" OPTSINSTALL="${OPTSINSTALL}" DISPLAY="${XHOSTDISPLAY}"
+	if [ "${1}" = "defense" ]
+	then
+		if [[ `dockerInspect "${CONTAINER_NAME}"` = "exited" ]]
 		then
-			login42="${USER}"
+			make destroy
 		fi
-		printf "\n"
-		cat >> ${DOCKERFILE} << EOF
-ENV USER=${login42}
-ENV MAIL=${login42}@student.42nice.fr
-
-EOF
 	fi
-
-	ret=1
-	while [ "${ret}" -ne 0 ];
-	do
-		normalize_path
-		ret=$?
-	done
-cat >> ${DOCKERFILE} << EOF
-WORKDIR /tmp/dev/${FOLDER}
-EOF
-fi
-
-cat >> ${DOCKERFILE} << EOF
-ENTRYPOINT [ "/bin/bash" ]
-EOF
+}
 
 
-# Mise en place du container
-make launch NAME="${CONTAINER_NAME}" OPTSINSTALL="${OPTSINSTALL}"
-if [ "${1}" = "defense" ]
-then
-	if [[ `docker inspect -f '{{.State.Status}}' "${CONTAINER_NAME}" 2>/dev/null` = "exited" ]]
-	then
-		make destroy
-	fi
-fi
+checkDockerRunning
+setContainerName "${1}"
+checkContainerState "${CONTAINER_NAME}" "${1}"
+
+setUpXServer
+generateConfigFiles "${1}"
+startContainer "${1}"
