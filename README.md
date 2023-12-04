@@ -28,6 +28,7 @@ Only allowed for the **42 Nice** campus. *This is not an official 42 tool.*
     1. [Firefox](#firefox)
     1. [Docker](#docker)
     1. [OpenGL](#opengl)
+    1. [RC Files](#rcfiles)
     1. [Exit container](#exit)
     1. [Reenter container](#rerun)
     1. [Uninstall container](#uninstall)
@@ -132,6 +133,8 @@ to be similar but I can not confirm this.
 If you encounter a trouble with the **DISPLAY** environment variable, you
 should update it (inside the **Makefile** where rule is `launch`) to your workstation's **$DISPLAY** value or set it to the value **:0**. Feedback me if it happens.
 
+*You can now use the container if you are on Windows. If not, contact me.*
+
 </details>
 
 ### Download Container
@@ -177,6 +180,7 @@ optional features are for the now:
 - 42's header (only for dev container):  
 You will be asked for your 42's login (8 characters max).  
 The address mail related is by default ended with `[at]student[dot]42nice[dot]fr`.
+- Linking your own `.bashrc` or `.vimrc` file
 
 You can safely type `n` if you do not want any of them.
 
@@ -442,6 +446,28 @@ Interesting reading: [Archive OpenGL MACOSX](https://developer.apple.com/library
 
 </details>
 
+<details id="rcfiles"><summary><b>RC Files (all)</b></summary>
+
+For the moment, no user are really created stricto sensus. No need to say, that is a bad practice, but as the purpose of this tool is only for developping and defending projects, I consider it is not an issue.
+
+So as no user is made, it is a bit tricky to configure slightly your rc container environment files. Then, they are set globally (a second very bad practice).
+
+You may find them at this place:
+
+```bash
+cat /etc/vim/vimrc.local
+cat /etc/bash.bashrc
+```
+
+You can now also link two of your own rc files, it will be asked if you want to do that:
+
+- `$HOME/.vimrc` *(from your $HOME environment)*
+- `$HOME/.bashrc` *(from your $HOME environment)*
+
+It is still a bit experimental, so do not hesitate to feed back if something not expected happens.
+
+</details>
+
 <details id="exit"><summary><b>Exit container (all)</b></summary>
 
 Inside the container:
@@ -522,6 +548,7 @@ owned.
 
 <details id="calendar"><summary><b>Calendar of previous changes</b></summary>
 
+- 4th December 2023.
 - 9th September 2023.
 - 8th September 2023.
 - 28th August 2023.
@@ -541,6 +568,10 @@ We are on the v6.1.5 version of the project. Tags are coming soon.
 >   <img alt="Info" src="https://raw.githubusercontent.com/Mqxx/GitHub-Markdown/main/blockquotes/badge/dark-theme/info.svg">
 > </picture><br>
 >
+> - Detects if the OS is Windows and set also the XServer connection to (slight different from Mac OS X, especially the DISPLAY variable)
+> - Fix bug blocking install of OpenGL
+> - A confirmation is now asked for the 42 login: possible to resend a new one.
+> - Possible to link the .bashrc or .vimrc of the user if needed
 > - Fix bugs norminette, install opengl, node.js 18, bugs X11, remove sudo rights
 > - Integrating OpenGL. / fix bugs
 > - Integrating better checks for invalid paths (we still can not create new
