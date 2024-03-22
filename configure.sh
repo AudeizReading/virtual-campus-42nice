@@ -139,8 +139,6 @@ function resolvePath {
 	fi
 }
 
-# function createFolder {}
-
 FOLDER=""
 path_work=""
 # TODO Laisser la possibilité de créer le répertoire
